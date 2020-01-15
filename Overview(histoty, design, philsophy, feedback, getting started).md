@@ -49,35 +49,30 @@ Spring은 계속해서 발전하고 혁신을 이뤄나갈 것이며, Spring에�
 프레임워크에 대해서 배울 때, 프레임워크에 대한 것 뿐만 아니라 프레임워크가 따르는 철학에 대해서 아는 것도 중요하다.
 Spring Framework의 원칙에 대해서 소개하겠다.
 
-- 
+- **Spring은 모든레벨에서 선택을 제공합니다.** Spring을 사용하면 Design 결정s을 가능한한 늦게 할 수 있습니다. 예로들어,
+   개발자는 프로젝트의 코드를 바꾸는 것 없이 configuration을 통하여 persistence provider를 바꿀 수 있습니다.
+   인프라와, 타사 API 통합에도 편리함을 제공한다.
+- **Spring은 다양한 관점을 수용합니다.** Spring은 유연성을 수용하고, 어떻게 그것을 수행할 것인지에 대해서 의견을 고집하지 (opinionated) 않습니다. Spring은 다양한 종류의 어플리케이션의 다른 관점에서의 요구를 지원합니다.
+- **Spring은 이전 버전과의 호환성을 유지합니다.** Spring's evolution은 버전간의 중요한 변경사항(breaking change)이 거의 없습니다. Spring은 신중하게 선택된 타사 라이브러리 및 JDK 버전을 지원하여 Spring에 의존하는 응용 프로그램 및 라이브러리의 유지관리를 용이하게 합니다.
+- **Spring은 API Design에 대해 신중히 한다.** Spring 개발 팀은 직관적이고(intuitive) 많은 버전과 수년에 걸쳐 유지되는(hold up) API를 만들기 위해 많은 시간과 노력을 쏟습니다.
+- **Spring은 Code 품질을 위해서 high standard(높은 기준)을 설정합니다.** Spring Framework는 의미있고, 현재의 정확한 javadoc에 중점을 둡니다. Spring은 패키지간에 순환 의존성이 없는 clean code를 요구할 수 있는 매우 드문 project입니다.
 
+---
 
+## Feedback and Contributions
 
+이슈에 대해서 디버깅하고, 진단하고, 질문을 하고 싶다면 우리는 StackOverflowf를 사용할 것을 제안한다. 우리는 사용할 수 있는 태그를 나열한 questions page를 가지고 있다. 만약 SpringFramework에 문제를 가지고 있거나, 기능(feature)을 제안하고 싶은 경우 GitHub Issues를 사용하세요.
 
+마음속에 솔루션을 가지고 있거나, 수정사항을 가지고 있는 경우 Github에 pull request를 보내면 됩니다. 명심하십시요 (keep in mind)  가장 사소한(trivial) 문제를 제외하고(But) 모든것에 대해서, 논의가 진행되고(take place) 나중에 참조할 수 있도록 기록이 남겨질 것입니다.
 
+---
 
+## Getting Started
 
+스프링을 시작한다면, Spring Boot 기반의 어플리케이션을 만듬으로써 Spring Framework를 사용할 수 있습니다. **Spring Boot는 Spring 기반의 production 준비가 된 application을 만드는 가장 빠른 방법을 제공해준다.** Spring Boot는 Spring Framework, configuration 보다는 convention을 중요시 합니다. SpringBoot는 최대한 빨리 가동하고 실행하도록 설계되었습니다.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+https://start.spring.io를 사용해서 기본적인 프로젝트를 생성할 수 있고, Getting Started Guides중의 하나를 따를 수 있다.
+뿐만아니라, 빨리 Spring 에 대해서 터득(digest)할 수 있다. 이러한 Guide는 특정한 문제를 해결할 때 고려해야 할 Spring 포트폴리오의 다른 프로젝트들도 다룹니다.
 
 
 
