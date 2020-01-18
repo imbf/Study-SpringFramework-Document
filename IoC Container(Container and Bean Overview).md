@@ -416,6 +416,126 @@ Bean definition은 본질적으로 하나 이상의 객체를 생성하기 위�
 
 ### Instantiation with a Constructor
 
+**생성자적 접근에의해서 Bean을 생성한다면, 모든 일반적인 클래스들은 Spring에서 사용가능하고 Spring과 호환됩니다. 즉, 개발중인 클래스를 특정한 인터페이스로 구현하거나, 특정한 방식(fashion)으로 코딩할 필요가 없다.** Bean 클래스를 간단히 명시해주는 것만으로도 충분하다. 그러나 **특정한 bean을 위해서 사용하는 IoC 타입에 의존한다면, default 생성자가 필요할 것이다.**
+
+Spring IoC Container는 사실상 관리하고자 하는 모든 클래스들을 관리할 수 있습니다. JavaBean에만 국한되지 않습니다.
+대부분의 Spring을 사용하는 개발자들은 기본 생성자와 컨테이너의 속성을 모델로한 적절한 setter 및 getter 만 사용하는 실제 JavaBean을 선호합니다. 하지만 여러분들이 사용하는 container는 bean의 특성을 가지지 않는 이국적인 class들도 가질 수 있습니다.
+
+예로들어 개발자들이 JavaBean 스펙을 지키지 않는 legacy connection pool 을 사용해야 한다면 스프링은 이것 또한 관리해 줄 수 있습니다.
+
+XML 기반의 configuration metadata 에서는 다음과 같이 bean class를 설정할 수 있습니다.
+
+```xml
+<bean id="exampleBean" class="examples.ExampleBean"/>
+
+<bean name="anthoerExample" class="examples.ExampleBeanTwo"/>
+```
+
+생성자에 인수를 제공하고, 객체를 생성 한 후 객체 인스턴스 속성을 설정하는 매커니즘에 대한 자세한 내용은 
+**Injecting Dependency** 을 참고해보아라!
+
+### Instantiation with a Static Factory Method 
+
+ 정적인 팩토리 메서드로 생성한 Bean을 정의할 때, 팩토리 메소드 자신의 이름을 명시하기 위한 **factory-method 속성**과 정적인 팩토리 메소드를 포함하는 클래스를 명시하기 위해서 **class 속성**을 사용해라. 개발자는 이 메소드를 호출할 수 있고 객체를 리턴받을 수 있다. (이것은 생성자를 통해서 객체가 생성되는 것 처럼 다루어진다.) 이러한 Bean 정의의 한가지 용도는 레거시 코드에서 정적 팩토리를 호출하는 것입니다.
+
+다음의 Bean 정의는 팩토리 메서드를 호출함으로써 생성된 빈을 명시하기위한 정의이다. 이 정의는 리턴되는 객체의 클래스 타입을 명시할 뿐만 아니라, 팩토리 매소드가 포함하는 클래스까지 명시하고 있다. 아래의 예제에서 createInstance() 매서드는 정적인 메소드 여야한다. 다음 예제는 어떻게 정적인 메소드를 정의하는지에 대한 예제를 보여준다.
+
+```xml
+<bean id="clientService" class="examples.ClientService" factory-method="createInstance"/>
+```
+
+  다음 예제는 이전 Bean 정의에서 작동하는 클래스를 보여줍니다.
+
+```java
+public class ClientService{
+  private static ClientService clientService = new ClientService();
+  private ClientService() {}
+  
+  public static ClientService createInstance() {
+    return clientService;
+  }
+}
+```
+
+선택적인 인자를 팩토리 메소드에 제공하고 팩토리 메소드로부터 객체가 리턴된 이후에 객체 인스턴스의 속성을 setting하는 메커니즘에 대한 구체적인 방법론은 **Dependencies and Configuration in Detail** 을 보길 바란다.
+
+### Instantiation by Using an Instance Factory Method
+
+**정적인 팩토리 메소드를 통해 인스턴스화 하는 것과 비슷하게, 인스턴스 팩토리 메소드의 인스턴스화는 Container로부터 존재하는 Bean의 non-static method를 호출해서 새로운 Bean을 만드는 방법이다.** 이러한 방법론을 사용하기 위해서는, class 속성은 비어있어야하고, **factory-bean 속성**에서 객체를 생성하기 위해 호출 할 인스턴스 메소드가 포함 된 현재(부모 또는 조상) 컨테이너의 Bean 이름을 지정하여야한다. **factory-method 속성**에 팩토리 메소드의 이름을 설정해야한다.
+
+다음 예는 이러한 Bean들을 어떻게 설정하는지에 관한 예이다.
+
+```xml
+<!-- The Factory Bean, which contains a method called createInstance() -->
+<bean id="serviceLocator" class="examples.DefaultServiceLocator">
+	<!-- inject any dependencies required by this locator bean -->
+</bean>
+
+<!-- the bean to be created via the factory bean -->
+<bean id="clientService"
+      factory-bean="serviceLocator"
+      factory-method="createClientServiceInstance"/>
+```
+
+위의 bean 설정과 일치하는 예제 클래스이다.
+
+```java
+public class DefaultServiceLocator{
+  private static ClientService clientService = new ClientServerImpl();
+  
+  public ClientService createClientServiceIntstance(){
+    return clientService;
+  }
+}
+```
+
+하나의 팩토리 클래스는 하나 이상의 팩토리 메소드를 가질 수 있다. 아래는 예시를 참고하자
+
+```xml
+<bean id="serviceLocator" class="examples.DefaultServiceLocator">
+	<!-- Inject any dependencies required by this locator bean-->
+</bean>
+
+<bean id="ClientService"
+      factory-bean="serviceLocator"
+      factory-method="createClientServiceInstance"/>
+
+<bean id="accountService"
+      factory-bean="serviceLocator"
+      factory-method="createAccountServiceInstance"/>
+```
+
+아래의 코드는 위의 configuration metadata와 일치하는 클래스의 예시이다.
+
+```java
+public class DefaultServiceLocator{
+  
+  private static ClientService clientService = new ClientServerImpl();
+  
+  private static AccountService accountService = new AccountServiceImpl();
+  
+  public ClientService createClientServiceIntstance(){
+    return clientService;
+  }
+  public AccountService createAccountServiceInstance(){
+    return accountService;
+  }
+}
+```
+
+이러한 접근방법은 의존성 주입을 통해서 factory bean이 관리되어지고 설정되어진다는 것을 보여준다.
+**Dependencies and Configuration in Detail** 에 대해서 봐보자
+
+> Spring Documentation에서 "factory bean"은 스프링 컨테이너에서 설정되어지고 인스턴스나, 팩토리 메소드를 통해서 객체를 생성할 수 있는 Bean을 의미한다. 대조적으로 FactoryBean( 대문자 표기 ) 는 스프링의 특정한 FactoryBean을 의미한다.
+
+
+
+
+
+
+
+
+
 
 
 
