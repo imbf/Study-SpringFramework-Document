@@ -16,12 +16,10 @@ AspectJ(현재 기능 측면에서 가장 풍부하고 자바 엔터프라이즈
 
 ## 1.1 Introduction to the Spring IoC Container and Beans
 
-**IoC는 의존성 주입(DI)이라고 알려져 있습니다. 객체가 생성자의 arguments, 팩토리 메서드에 대한 arguments, 팩토리 메서드로부터 리턴되거나 생성된 후의 객체 인스턴스에 설정된 특성을 통해서 의존성을 정의하는것을 의미한다.**
+**IoC는 의존성 주입(DI)이라고 알려져 있습니다. 객체가 생성자의 arguments, 팩토리 메서드에 대한 arguments, 팩토리 메서드로부터 리턴되거나 생성된 후의 객체 인스턴스에 설정된 특성을 통해서 의존성을 정의하는것을 의미한다.** IoC Conatiner는 Bean을 생성할 때 의존성을 주입합니다. 이 과정은 Service Loator pattern에 의한 방법이나, class들의 생성자를 직접적으로 사용함으로써 의존성의 인스턴스화 또는 위치를 제어하는 Bean 자체의 근본적인 반전 입니다.
 
+***팩토리 메서드** 
 
-
-> *팩토리 메서드 
->
 > 1) 의도
 > 객체를 생성하기 위해 인터페이스를 정의하지만, 어떤 클래스의 인스턴스를 생성할지에 대한 결정은 서브클래스가 내리도록 한다. 이처럼 구체적인 개체를 생성하는 부분을 분리하면 추상 팩토리 클래스에서는 어떠한 개체를 생성할 것인지에 대한 고민은 뒤로 미루고 개체를 사용하는 부분을 구현할 수 있다. '**팩토리 메서드란 추상 팩토리 클래스에 약속된 개체를 생성하는 메서드이다.**' 팩토리 메서드는 다른 이름으로 가상 생성자 (Virtual Constructor)라 한다.
 >
@@ -124,7 +122,13 @@ AspectJ(현재 기능 측면에서 가장 풍부하고 자바 엔터프라이즈
 >       }
 >       ```
 >
->       FactoryMain : 메인 프로그램
+>       Class 클래스는 JVM에서 동작할 클래스의 정보를 묘사하기 위한 일종의 메타 클래스(Meta-Class) 입니다. 즉, JVM에 로드될 각 클래스들의 정보를 담고 있는 클래스입니다.
+>
+>       Class 클래스의 정적 메소드 forName()에 의해 레퍼런스 변수 cls는 some.package.SomeClass 클래스의 정보를 담은 Class 클래스의 인스턴스를 얻어옵니다.
+>
+>       이제 newInstance() 메소드를 호출하게 되면, 이 메소드는 some.pakcage.SomeClass의 인스턴스를 생성한 다음 기본 생성자를 호출하여 인스턴스를 초기화하고, 생성된 인스턴스를 리턴합니다.
+>
+>       **FactoryMain : 메인 프로그램**
 >
 >       ```java
 >       package pattern.factory;
@@ -147,10 +151,13 @@ AspectJ(현재 기능 측면에서 가장 풍부하고 자바 엔터프라이즈
 >         }
 >       }
 >       ```
->
->       
 
+**org.springframework.beans** 와 **org.springframework.context** 패키지는 SpringFramework의 IoC container의 기본 패키지이다. **BeanFactory** 인터페이스는 어느 타입의 객체라도 다룰 수 있는 향상된 설정 방법을 제공합니다. **ApplicationContext는 BeanFacotry를 상속받아 다양한 기능을 추가한 서브인터페이스이다.**
 
+추가된 기능
+
+- Spring의 AOP 기능과의 쉬운 통합
+- 
 
 
 
