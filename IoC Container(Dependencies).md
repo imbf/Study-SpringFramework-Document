@@ -274,9 +274,44 @@ public class ExampleBean{
 
 Bean definition에서 명시된 생성자 인자는 ExampleBean 클래스 생성자의 인자로써 사용된다.
 
-지금부터는 이러한 예제의 변형에 대해서 참고해보자. 
+지금부터는 이러한 예제의 변형에 대해서 참고해보자. 생성자를 사용하는 대신, Spring은 객체의 인스턴스를 리턴하기 위해서 정적 팩토리 메소드를 리턴한다.
 
+```xml
+<bean id="exampleBean" class="examples.ExampleBean" factory-method="createInstance">
+	<constructor-arg ref="anotherExampleBean"/>
+  <constructor-arg ref="yetAnotherBean"/>
+  <constructor-arg value="1"/>
+</bean>
 
+<bean id="anotherExampleBean" class="examples.AnotherBean"/>
+<bean id="yetAnotherBean" class="examples.YetAnotherBean"/>
+```
+
+ 다음의 예제는 ExampleBean 클래스와 일치하는 예제이다.
+
+```java
+public class ExampleBean{
+  
+  // private 생성자
+  private ExampleBean(...){
+    //...
+  }
+  
+  // 정적인 팩토리 메소드
+  // 이 메소드의 인자들은 어떻게 그들이 실제로 사용되어지는 것과 상관없이 리턴되는 Bean의 의존성으로 여겨진다.
+  public static ExampleBean createInstance(AnotherBean anotherBean, YetAnotherBean yetAnotherBean, int i) {
+    ExampleBean eb = new ExampleBean(...);
+    // some other operations...
+    return eb;
+  }
+}
+```
+
+정적인 메소드의 인자는 **\<constructor-args/>** 요소에 의해서 제공되어진다. 생성자로써 사용하는 것처럼 같다. 팩토리 메소드에 의해서 리턴되는 클래스의 타입은 정적 팩토리 메소드를 포함하는 클래스와 동일한 유형일 필요는 없습니다. (위의 예제와는 달리). 정적이지 않는 팩토리 메소드의 인스턴스는 본질적으로 동일한 방법으로 사용되어진다. (하지만 class 속성 대신에 **factory-bean 속성을 사용한다.**)
+
+### 1.4.2 Dependencies and Configuration in Detail
+
+이전 섹션에서 언급 한것처럼. 개발자들은 bean의 특성 및 생성자 인자를 관리되는 Bean에 대한 참조 또는 인라인으로 정의 된 값으로 정의할 수 있습니다. Spring의 XML 기반의 configuration metadata는 이를 위해 \<property/> 와 \<constructor-arg/> 요소에서 하위 요소 유형을 지원합니다.
 
 
 
