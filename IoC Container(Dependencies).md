@@ -313,6 +313,228 @@ public class ExampleBean{
 
 이전 섹션에서 언급 한것처럼. 개발자들은 bean의 특성 및 생성자 인자를 관리되는 Bean에 대한 참조 또는 인라인으로 정의 된 값으로 정의할 수 있습니다. Spring의 XML 기반의 configuration metadata는 이를 위해 \<property/> 와 \<constructor-arg/> 요소에서 하위 요소 유형을 지원합니다.
 
+### Straight Values (Primitives, String, and so on)
+
+**\<property/>**요소의 **value 속성**은 사람이 읽을 수 있는 문자열 표현으로 생성자 인수나, 속성을 정의합니다. Spring의 변환(conversion) 서비스는 이러한 String의 값들을 실제 property나 인자의 값으로 바꾸어준다.
+다음 예제는 다양한 value의 값이 설정되어지는 것을 보여준다.
+
+```xml
+<bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource" destory-method="close">
+  
+  <!-- setDriverClassName 호출의 결과 -->
+  <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+  <property name="url" value="jdbc:mysql://localhost:3306/mydb"/>
+  <property name="username" value="root"/>
+  <property name="password" value="masterkaoli"/>
+  
+</bean>
+```
+
+다음은 더 간결한 XML Configuration을 위한 p-namespace를 사용한 예제이다.
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframewokr.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/chema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+  <bean id="myDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+        destroy-method="close"
+        p:driverClassName="com.mysql.jdbc.Driver"
+        p:url="jdbc:mysql://localhost:3306/mydb"
+        p:username="root"
+        p:password="masterkaoli"/>
+  
+</beans>
+```
+
+위의 XML파일이 보다 더 간단하다. 하지만, Bean을 정의할 때 자동 property를 완성해 주는 기능을 지원해주는 IDE(intellij와 spring Tool Suite)를 사용하지 않으면 런타임시에 오타(typo)가 발견될 수도 있습니다. 이러한 IDE의 도움을 매우 추천합니다.
+
+개발자들은 **java.util.Properties** 인스턴스를 다음과 같이 설정할 수 있습니다.
+
+```xml
+<bean id="mappings" class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+	
+  <!-- typed as a java.util.Properties -->
+  <property name="properties">
+  	<value>
+    	jdbc.driver.classname=com.mysql.jdbc.Driver
+      jdbc.url=jdbc:mysql://localhost:3306/mydb
+    </value>
+  </property>
+</bean>
+```
+
+Spring Container는 **\<value/> 요소**내의 텍스트를 **java.util.Properties**의 인스턴스로 JavaBeans **PropertyEdiotr** 방법을 사용해서 변환합니다. 이러한 방법은 매우 간결하고 스프링팀이 value 속성 스타일에 중첩된 **\<value/>**요소를 사용하는 것을 선호하는 부분 중 하나입니다.
+
+### The idref element
+
+**idref 요소는 Container에 있는 다른 Bean의 Id(문자열 값-참조가 아님)를 \<constructor-arg/> 또는 \<property/> 요소에전달하는 오류 방지 방법입니다.**
+
+**다음의 예는 어떻게 idref 요소를 사용하는지에 대해서 알려줍니다. (추천 하는 방법)**
+
+```xml
+<bean id="theTargetBean" class="..."/>
+
+<bean id="theClientBean" class="...">
+	<property name="targetName">
+  	<idref bean="theTargetBean"/>
+  </property>
+</bean>
+```
+
+이전 Bean의 정의는 런타임시 다음의 Bean 정의 예제와 정확히 동일하다.
+
+```xml
+<bean id="theTargetBean" class="..."/>
+
+<bean id="client" class="...">
+	<property name="targetName" value="theTargetBean"/>
+</bean>
+```
+
+idea 태그를 사용하면 배포시 컨테이너가 참조된 bean이 실제로 존재하는지를 검증(validate) 할 수 있음으로 첫 번째 예제가 두번째 예제보다 선호됩니다. 두 번째 변형된 예제에서, Client Bean의 targetName 특성에 전달 된 값에 대해 검증을 수행하지 않기 때문에 1번 예제의 idref 태그르 사용할 것을 추천합니다. 오류는 Client Bean이 실제로 인스턴스화 될때 이상한 결과와 함께 오타가 발견됩니다. 만약 Client Bean이 prototype bean이라면, 이러한 오타와 예외는 container가 배포된 후에 발견이 되어질 것입니다.
+
+> **idref 요소의 local 속성** 은 4.0 Beans XSD 에서 더이상 지원이 되지 않습니다. 더이상 일반적인 Bean의 참조보다 Value를 제공하지 않기 때문입니다. 4.0 버전을 업그레이드 할 때 존재하는 idef local 참조를 **idref bean**으로 바꾸십시요.
+
+Value를 가지고 오는 \<idref/> 요소의 일반적인 위치는 ProxyFactoryBean Bean definition에서 AOP interceptors의 configuration에 위치한다. 개발자가 interceptor name을 \<idef/> 요소를 사용해서 명시한다면 interceptor ID를 틀리는 것을 방지해 줍니다.
+
+### References to other Beans (Collaborators)
+
+**ref 요소**는 \<constructor-arg/> 또는 \<property/> 요소 안에 들어 있는 마지막 요소이다. 이러한 요소에서 Bean에 지정된 특정한 property의 값을 Cotainer가 관리하는 Bean(Collaborator)에 대한 reference가 되도록 설정한다. 참조가 되어지는 Bean은 property가 설정되어 있고, property가 설정되기 전에 요구에 의해 초기화 되어져 있는 Bean의 의존성을 가진다.
+(만약 collaborator가 singleton bean이라면, 이미 Container에 의해 초기화 되어져 있을 것이다. ) **모든 참조는 궁극적으로 다른 객체에 대한 참조 입니다. Bean의 Scoping 과 Validation은 bean, local, parent 속성을 통해 객체의 ID 또는 name을 명시 했는지 안했는지에 따라서 다릅니다.**
+
+**\<ref/> 태그의 bean 속성**을 통해서 target Bean을 명시하는 것은 가장 일반적인 형태이고, 같은 XML 파일에 존재 하는 것과는 관계없이 부모 Container 또는 같은 Container에서 모든 Bean의 참조를 허용합니다. **bean속성의 값은** target Bean의 id 속성과 또는 target Bean의 name 속성과 같습니다. 
+
+다음 예를 통해서 어떻게 ref 요소를 사용하는지 알아봅시다.
+
+```xml
+<ref bean="someBean"/>
+```
+
+**parent 속성**을 통해 target Bean을 명시하는 것은 현재  Container의 부모 Container 안에서 reference를 생성하는 것이다. **parent 속성**의 값은 아마 target Bean의 id 속성 또는 target Bean의 name 속성에서의 값중의 하나와 같을 것입니다. target Bean은 현재 Container의 부모 Container에 있어야 합니다. 컨테이너 계층구조가 있고, Parent Bean과 이름이 동일한 프록시를 사용하여 존재하는 Bean을 부모 Container에 감쌀려는 경우에는 개발자는 Bean reference 변형을 사용해야 합니다.
+
+다음의 2가지 예는 어떻게 parent 속성을 사용하는가에 대해서 알려줍니다.
+
+```xml
+<!-- parent context-->
+<bean id="accountService" class="com.something.SimpleAccountService">
+	<!-- 필요에 따라 의존성 삽입 -->
+</bean>
+```
+
+```xml
+<!-- child context -->
+<!-- Bean 이름이 parent Bean과 동일하다. -->
+<bean id="accountService" class="org.springframework.app.framework.ProxyFactoryBean">
+  <property name="target">
+    <ref parent="accountservice"/> <!-- 부모 Bean을 어떻게 참조하는지에 주목하십시요. -->
+  </property>
+  <!-- 필요한 설정 및 의존성을 삽입하세요. -->
+</bean>
+```
+
+> **ref 요소의 local 속성**은 더이상 4.0 Beans XSD 에서 지원하지 않습니다. 일반적인 bean의 참조보다 값을 제공하지 않기 때문입니다. 4.0 스키마를 업그레이드할 때 이미 존재하는 ref local 참조를 ref bean으로 바꾸세요
+
+### Inner Beans
+
+**\<property/> 또는 \<constructor-arg/> 요소 내부의 \<bean/> 요소**는 inner Bean을 정의한다. 다음 예제를 참고해 보자.
+
+```xml
+<bean id="outer" class="...">
+	<!-- target Bean의 참조를 사용하는 것 대신에, 간단히 target Bean inline을 정의하였다. -->
+  <property name="target">
+  	<bean class="com.example.Person">
+    	<property name="name" value="Fiona Apple"/>
+      <property name="age" value="25"/>
+    </bean>
+  </property>
+</bean>
+```
+
+내부 Bean의 정의는 ID 또는 name을 필요로 하지 않습니다. 만약 명시되어 있다해도, Container는 이러한 값들을 식별자로써 사용하지 않을 것입니다. **Container는 Inner Bean 생성시 Scope flag도 무시합니다.** inner Bean은 항상 익명적이고, outer Bean과 함께 항상 생성되어 있어져야하기 때문입니다. Inner Bean에 독립적으로 접근하는 것과 Inner Bean을 가지고 있는 Bean 이외에 다른 Bean에 주입하는 것은 불가능합니다.
+
+특별한 상황에서는, custom scope 로부터 destruction callbacks를 받을 수 있다. - 예로들어, singleton Bean에 포함된 request-scoped inner Bean의 경우. Inner Bean 인스턴스의 생성은 Inner Bean을 포함하는 Bean에 연결되어 있지만
+<u>**but destruction callbacks let it participate in the request scope's lifecycle**</u> 
+
+이러한 것들은 일반적인 시나리오가 아니며, Inner Bean들은 전형적으로 자신을 포함하는 Bean의 범위를 공유한다.
+
+### Collections
+
+**\<list/>, \<set/>, \<map/>, \<props/> 요소는** Java Collection type의 List, Set, Map, Properties의 인자와 properties를 각각 설정해준다.
+
+다음 예는 이러한 요소들을 어떻게 사용하는지에 대해서 보여준다.
+
+```xml
+<bean id="moreComplexObject" class="example.ComplexObject">
+  
+  <!-- setAdminEmails(java.util.Properties) 호출 결과 -->
+  <property name="adminEamils">
+  	<props>
+    	<prop key="adminstrator">adminstrator@example.org</prop>
+      <prop key="support">support@example.org</prop>
+      <prop key="development">development@example.org</prop>
+    </props>
+  </property>
+  
+  <!-- setSomeList(java.util.List) 호출 결과 -->
+  <property name="someList">
+  	<list>
+    	<value>a list element followed by a reference</value>
+      <ref bean="myDataSource"/>
+    </list>
+  </property>
+  
+  <!-- setSomeMap(java.util.Map) 호출 결과 -->
+  <property name="someMap">
+  	<map>
+    	<entry key="an entry" value="just some string"/>
+    	<entry key="a ref" value="myDataSource"/>
+    </map>
+  </property>
+  
+  <!-- setSomeSet(java.util.Set) 호출 결과 -->
+  <property name="someSet">
+  	<set>
+    	<value>just some string</value>
+      <ref bean="myDataSource"/>
+    </set>
+  </property>
+</bean>
+```
+
+key 또는 value 또는 set value의 값은 다음 요소중 어떤것이라도 될 수 있다.
+
+```XML
+bean | ref | idrf | list | set | map | props | value | null
+```
+
+### Collection Merging
+
+Spring Container 또한 merging collection을 지원한다. 어플리케이션 개발자는 부모의 \<list/>, \<map/>, \<set/>, \<props/> 요소를 정의할 수 있도록 그리고 자손의 \<list/>, \<map/>, \<set/>, \<props/> 요소들이 부모 collection으로부터의 값을 상속하고 오버라이드 할 수 있도록 할 수 있다. 즉, 자손 collection의 값은 부모와 자손 collection의 요소를 병합한 값과 같다. 부모 collection에서 정의된 값을 오버라이딩 할 수 있습니다.
+
+이번 섹션인 marging 섹션은 부모와 자식의 bean 메커니즘에 대해서 논의하고, 부모와 자식 Bean 설정에 익숙하지 않는 분은 relevant section을 시작하기전에 읽으실 것을 권유합니다.
+
+다음은 collection merging을 입증하는 예제이다.
+
+```xml
+<beans>
+	<bean id="parent" abstract="true" class="example.ComplexObject">
+  	<property name="adminEmails">
+    	<props>
+      	<prop key="adminstrator">adminstrator@example.com</prop>
+      	<prop key="support">support@example.com</prop>
+      </props>
+    </property>
+  </bean>
+  <bean id="child" parent="parent">
+  	<property name="adminEmails">
+
+    </property>
+  </bean>
+</beans>
+```
+
 
 
 
