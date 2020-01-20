@@ -529,15 +529,36 @@ Spring Container 또한 merging collection을 지원한다. 어플리케이션 �
   </bean>
   <bean id="child" parent="parent">
   	<property name="adminEmails">
-
+			<!-- 자식 Collection Definitiond에서 merge가 명시되어 있다. -->
+      <props name="adminEmails">
+      	<prop key="sales">sales@example.com</prop>
+        <prop key="support">support@example.co.uk</prop>
+      </props>
     </property>
   </bean>
 </beans>
 ```
 
+위 예제는 child Bean Definition의 adminEmails property의 porps 요소의 merge=true 속성을 사용하세요. Child **Bean이 Container에 의해서 분석되고 인스턴스화 될 때 인스턴스 결과는 자손의 adminEmails collection과 부모의 adminEmials collection을 병합한 결과를 포함한 adminEmails Properties collection을 가집니다.**
 
+결과는 다음과 같다.
 
+```
+adminstrator=adminstrator@example.com
+sales=sales@example.com
+support=supprot@example.co.uk
+```
 
+**자식 Properties 컬렉션의 값 설정은 부모의 \<props/>요소에 있는 property의 모든 요소를 상속하고 support 값을 위해서 자식의 값이 부모 컬렉션에서의 값을 오버라이드 합니다.**
+
+이러한 병합 과정은 \<list/>, \<map/>, \<set/> 컬렉션 타입에도 비슷하게 적용된다. \<list/> 요소의 특별한 경우에, List 컬렉션과 관련있는 의미(즉, value의 순서있는 컬렉션의 개념) 은 유지되어야 한다. 부모의 값들은 모든 자식의 list의 값보다 우선시 된다.
+Map, Set, Properties 컬렉션 타입의 경우에는 어떠한 순서도 존재하지 않는다. 이러한 이유로(hence), 순서가 있지 않는 시멘틱들도 Container가 내부적으로 사용하는 관련된 Map, Set, Properties 구현 타입에 기초가되는 컬렉션 타입에 영향을 미친다.
+
+### Limitations of Collection Merging
+
+개발자는 다른 컬렉션 타입을 병합할 수 없다. 만약 이러한 시도를 한다면 적절한 예외가 던져질 것이다. **merge 속성은 하위의, 상속받는 자손 definition에 명시되어야 한다.** 부모 컬렉션 정의에 merge 속성을 명시하는 것은 쓸모없고, 바라는 병합 결과를 발생하지 않을것이다.
+
+### Strongly-typed collection
 
 
 
