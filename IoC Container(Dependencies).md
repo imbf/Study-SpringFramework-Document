@@ -560,9 +560,238 @@ Map, Set, Properties 컬렉션 타입의 경우에는 어떠한 순서도 존재
 
 ### Strongly-typed collection
 
+Java 5에서 제네릭 타입이 소개되면서(with), 개발자는 강력한 타입의 collection을 사용할 수 있게 됬다. 즉, String 요소만 포함할 수 있도록 컬렉션 유형을 선언할 수 있다는 말이다. Spring을 사용하여 강력한 형식의 Collection을 Bean에 의존성 주입 하려는 경우, 개발자는 Spring의 타입변환 지원을 사용할 수 있다. 예로들어 강한타입의 Collection 인스턴스의 요소가 Collection 타입에 추가되기전에 적절한 타입으로 변환 되어질 것이다.
 
+다음의 예제는 어떻게 이러한 것들을 정의하는지에 대해서 알려준다.
 
+```java
+public class SomeClass{
+  private Map<String, Float> accounts;
+  
+  // setter를 통한 의존성 주입 방법
+  public void setAccounts(Map<String, Float> accounts){
+    this.account = accounts;
+  }
+}
+```
 
+```xml
+<beans>
+	<bean id="something" class="x.y.SomeClass">
+  	<property name="accounts">
+    	<map>
+      	<entry key="one" value="9.99"/>
+        <entry key="two" value="2.75"/>
+        <entry key="six" value="3.99"/>
+      </map>
+    </property>
+  </bean>
+</beans>
+```
+
+ 의존성 주입을 위한 something Bean의 accounts property가 준비가 되었을 때 강력한 형식의 Map\<String, Float> 의  요소 타입에 대한 제네릭 정보는 reflection에 의해서 사용할 수 있습니다. 게다가, Spring의 타입 변환 인프라는 다양한 요소의 값을 Float으로 인식한다. String 값(9.99, 2.75, 3.99)은 실제 Float 타입으로 변환이 되어집니다.
+
+### Null and Empty String Values
+
+Spring은 빈 문자열과 properties를 위해서 빈 인자를 처리합니다.
+
+다음의 XML 기반의 configuration metadata는 email property에 빈 String 값을 설정하는 작은 정보를 포함한다.
+
+```xml
+<bean class="ExampleBean">
+	<property name="email" value=""/>
+</bean>
+```
+
+이전의 configuration metadata는 다음 Java Code와 대응한다.
+
+```java
+exampleBean.setEmail("");
+```
+
+\<null/>요소는 **null 값(null)**을 다룹니다.
+
+다음은 \<null/>을 활용하는 방법에 대한 예제입니다.
+
+```xml
+<bean class="ExampleBean">
+	<property name="email">
+  	<null/>
+  </property>
+</bean>
+```
+
+이전의 XML 기반의 configuration Metadata는 다음의 Java Code와 대응된다.
+
+```java
+exampleBean.setEmail(null);
+```
+
+### XML Shortcut(간단한 방법) with the p-namesace
+
+**p-namespace**는 개발자가 **bean 요소의 속성을** 사용하며 ( 중첩된 \<property/> 요소 대신 )  collaborating beans들의 값을 설정하는 방법이다.
+
+Spring은 XML 스키마 정의에 기반한 namespace로 확장가능한 설정 형식을 제공해준다.이번 Chapter에서 논의될 **bean 설정 형식**은 XML 스키마 문서에 정의되어 있다. 그러나 p-namespace는 XSD 파일에 정의되어 있지 않고 오직 Spring 핵심 문서에만 저장되어 있다.
+
+다음은 2가지의 같은 결과를 갖는 간단한 XML 형식을 보여준다. (한개는 표준 XML 형색 한개는 p-namespace를 사용한 XML 형식)
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           http://www.springframework.org/schema/beans/spring-beans.xsd">
+  <bean name="classic" class="com.example.ExampleBean">
+  	<property name="eamil" value="someone@somewhere.com"/>
+  </bean>
+  
+  <bean name="p-namespace" class="com.example.ExampleBean"
+        p:email="someone@somewhere.com"/>
+  
+</beans>
+```
+
+위의 예제는 Bean 정의에서 email이라고 불리는 p-namespace의 속성에 대해서 보여주었다. 이러한 형식은 Spring에게 property 선언을 포함하도록 정의합니다.앞에서 언급했듯이 p-namespace에는 schema 정의가 없음으로 속성 이름을 property name으로 지정할 수 있습니다.
+
+다음의 예는 다른 Bean을 참조하는 2가지  Bean의 정의를 포함하고 있습니다.
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+  <bean name="john-classic" class="com.example.Person">
+    <property name="name" value="John Doe"/>
+    <property name="spouse" ref="jane"/>
+  </bean>
+  
+  <bean name="john-modern"
+        class="com.example.Person"
+        p:name="John Doe"
+        p:spouse-ref="jane"/>
+  
+  <bean name="jane" class="com.example.Person">
+  	<property name="name" value="Jane Doe"/>
+  </bean>
+
+</beans>
+```
+
+위 예제는 p-namespace를 사용한 property value를 포함할 뿐"만 아니라, property references를 선언하기 위해 특별한 형식을 포함하고 있다. 첫 번째 Bean의 정의는 **\<property name="spouse" ref="jane"/>**를 사용해서 john으로부터 jane의 참조를 생성하지만, 두 번째 Bean 정의는 **p:spouse-ref="name"**을 사용함으로써 첫 번째 Bean의 정의와 똑같은 역할을 하는 Bean을 정의했다. 이러한 경우에 spouse는 property name이고, 반면에 -ref 부분은 단순한 값이 아니라 다른 Bean의 참조를 가리킨다.
+
+> p-namespace는 표준 XML 형태처럼 유연하지 않습니다. 예로들어, property reference를 선언하는 형식은 ref로 끝나는 속성과 충돌하지만, 반면에(whereas) 표준 XML 형식은 그렇지 않습니다. 세 가지 접근 방식을 동시에 사용하는 XML 문서를 생성하지 않도록 접근 방식을 신중하게 선택하고 이를 팀 구성원에게 전달하는 것을 권장합니다.
+
+### XML Shortcut with the c-namespace
+
+p-namespace를 사용한 XML의 손쉬운 방법과 비슷하게, Spring 3.1에서 소개되었던 c-namespace는 중첩된 constructor-arg 요소 보다 생성자의 인자를 정의하기 위해서 inline 속성에 허용하는 방법이다.
+
+다음의 예는 c-namespace를 사용해서 생성자 기반의 의존성 주입을 하는 예제를 보여준다.
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd">
+  <bean id="beanTwo" class="x.y.ThingTwo"/>
+  <bean id="beanThree" class="x.y.ThingThree"/>
+  
+  <!-- 선택적인 인자의 이름 전통적 선언 -->
+  <bean id="beanOne" class="x.y.ThingOne">
+  	<constructor-arg name="thingTwo" ref="beanTwo"/>
+  	<constructor-arg name="thingThree" ref="beanThree"/>
+  	<constructor-arg name="email" value="something@somewhere.com"/>
+  </bean>
+  
+  <!-- c-namespace의 인자 이름 선언 -->
+  <bean id="beanOne" class="x.y.ThingOne" c:thingTwo-ref="beanTwo"
+        c:thingThree-ref="beanThree" c:email="something@somewhere.com"/>
+</beans>
+```
+
+c-namespace는 이름으로 부터 생성자의 인자를 셋팅하기 위해 p-namespace와 같은 컨벤션(규칙)을 사용하고 있다.
+비슷하게 c-namespace는 XML 파일로 선언되어야 한다. 비록 Spring core내에 존재하는 XSD schema에는 정의되어 있지 않지만.
+
+생성자 인수의 이름을 사용할 수 없는 드문 경우(디버깅 정보 없이 bytecode가 컴파일 되었을 경우)에는, 다음과 같이 인수 인덱스에 fallback을 사용할 수 있습니다.
+
+```xml
+<!-- c-namespace 인덱스 선언 -->
+<bean id="beanOne" class="x.y.ThingOne" c:_0-ref="beanTwo" c:_1-ref="beanThree" c:_2="something@somewhere.com"/>
+```
+
+> XML의 문법 때문에, index 정의에 선두 '_'가 필요하다. XML 속성 이름은 숫자로써 시작할 수 없다.( 허용하는 조금의 IDE가 있을 지라도 ) \<constructor-arg> 요소를 위한 대응하는 인덱스 표기법은 사용할 수 있지만, 기본의 선언 순서가 일반적으로 충분하기 때문에 사용하지 않는다.
+
+실제로(In practice), 생성자 확인 메커니즘은 인수를 일치시키는데 매우 효율적이므로, 실제로 필요한 경우가 아니면(unless) configruation 전체에서 이름 표기법을 사용하는 것을 추천합니다.
+
+### Compound(복합체) Property Names
+
+개발자는 복합체 또는 중첩된 property 이름을 Bean properties를 설정할 때 사용합니다. 최종 property 이름을 제외한 경로의 모든 구성 요소가 null이 아닌 한.
+
+다음의 Bean 정의에 관한 예제를 보아라
+
+```xml
+<bean id="something" class="things.ThingOne">
+	<property name="fred.bob.sammy" value="123"/>
+</bean>
+```
+
+ Something Bean은 sammy property를 가진 bob property를 가진 fred property를 가진다. 그리고 마지막 sammy property는 123이라는 값이 설정 되어진다. 이러한 property들이 작동하기 위해서는, Bean이 생성된 후 fred의 bob property와 something의 fred property가 무조건 null이 아니여야 한다. 그렇지 않으면 NullPointerException 예외를 발생할 것이다.
+
+### 1.4.3 Using depends-on
+
+만약 Bean이 또 다른 Bean의 의존성 이라면, 한 Bean은 다른 Bean의 property로써 설정되어진다고 의미할 수 있다. 전형적으로 XML 기반의 configuration metadata에서 \<ref/> 요소를 사용해서 의존성을 설정해야한다. 그러나 때때로 Bean들 간의 의존성은 직접적이지가 않다. 데이터베이스 드라이버 등록과 같이 클래스의 정적 초기화 프로그램을 트리거해야하는 경우를 예로들 수 있다. **depends-on 속성은 이러한 속성을 사용하는 Bean이 초기화 되기전에 하나 이상의 Bean을 초기화 시키는 속성이다.**
+
+> 트리거(trigger)
+>
+> 특정 테이블에 INSERT, DELETE, UPDATE 같은 DML 문이 수행되었을 때 데이터베이스에서 자동으로 동작하도록 작성된 프로그램입니다.
+
+다음 예는 dependes-on 속성을 사용해서 single Bean의 의존성을 표현하는 방법이다.
+
+```xml
+<bean id="beanOne" class="ExampleBean" depends-on="manager"/>
+<bean id="manager" class="ManagerBean"/>
+```
+
+다수의 Bean에 의존성을 표현하기 위해, depends-on의 속성 값으로써 bean의 이름을 나열한다. (쉼표, 공백, 세미콜론은 유효한 구분기호(delimiters)이다.)
+
+```xml
+<bean id="beanOne" class="ExampleBean" depends-on="manager, accountDao">
+	<property name="manager" ref="manager"/>
+</bean>
+
+<bean id="manager" class="ManagerBean"/>
+<bean id="accountDao" class="x.y.jdbc.JdbcAccountDao"/>
+```
+
+depends-on 속성은 초기화 시간 의존성과 singleton Bean의 경우 소멸시간 의존성을 모두 지정할 수 있습니다. 지정된 Bean과의 의존 관계를 지정하는 의존 Bean은 지정된 Bean이 소멸되기전에  첫 번째로 소멸됩니다. 게다가 depends-on은 종료 순서를 제어할 수도 있습니다.
+
+### 1.4.4 Lazy-initialized(게으르게 초기화되는) Beans
+
+**기본적으로 ApplicationContext 구현은 초기화 프로세스의 일부로서(as) 모든 singleton Bean을 설정하고 생성합니다.** 일반적으로, 이러한 사전 인스턴스화는 바람직합니다. 환경설정 또는 주변의 환경 에러가 몇시간 또는 며칠 뒤가 아닌 즉시 발견되기 때문에 바람직합니다. 이러한것들이 바람직하게 동작하지 않을 때, Bean의 정의를 늦게 초기화하도록 함으로써 singleton의 사전 인스턴스화를 막을 수 있습니다. lazy-initialized bean은 IoC Container에게 Container가 초기화할 때 보다는 요청받을 때 bean의 인스턴스를 생성하도록 요청합니다.
+
+XML에서 이러한 작업들은 \<bean/> 요소에 **lazy-init 속성**에 의해서 제어됩니다. 예제를 참고하세요.
+
+```xml
+<bean id="lazy" class="com.something.ExpensiveToCreateBean" lazy-init="true"/>
+<bean name="not.lazy" class="com.something.AnotherBean"/>
+```
+
+이러한 configuration 들이 ApplicationContext에 의해서 처리될 때, lazy Bean은 ApplicationContext가 시작할 때 사전 인스턴스화가 되어지지 않고, 반면에 not.lazy Bean은 사전 인스턴스화가 된다.
+
+lazy-initialized Bean이 lazy-initialized Bean이 아닌 singleton Bean에 의존성이라면, ApplicationContext는 lazy-initialized Bean을 시작시에 생성한다. singleton Bean의 의존성을 무조건 충족해야 하기 때문이다. lazy-initialized Bean은 not lazy-initialized Bean으로써 singleton Bean의 모든곳에 주입된다.
+
+개발자는 **\<beans/> 요소의 default-lazy-init 속성**을 사용해서 Container 레벨에서 lazy-initialization을 제어할 수 있다.
+
+다음의 예제 코드를 참고하자
+
+```xml
+<beans deafult-lazy-init="true">
+	<!-- 어떠한 빈도 사전 인스턴스화 되지 않는다. -->
+</beans>
+```
+
+### Autowiring Collaborators
 
 
 
