@@ -288,7 +288,7 @@ import 태그를 사용해서 bean을 정의하는 파일들을 로드할 수 �
 </beans>
 ```
 
-### The Groovy Bean Definition DSL
+#### The Groovy Bean Definition DSL
 
 외부화된 configuration meatadta를 위한 예시, Bean을 정의하는 것은 또한 Grail Framework로부터 알려진 Spring's Groovy Bean Definition DSL 에 의해서 표현되어진다. 전형적으로 이러한 configruation은 .groovy 파일로부터 만들어지고 아래와 같은 구조를 갖는다.
 
@@ -373,7 +373,7 @@ XML 기반의 configuration metadata에서는 Bean의 식별자를 명시하기 
 > classpath에서 component를 스캔하면, Spring은 이름이 없는 components에 bean의 이름을 생성합니다.
 > 스프링이 사용하는 naming 규칙은 **java.beans.Introspector.decapitalize**에 정의되어 있다.
 
-### Aliasing a Bean outside the Bean Definition
+#### Aliasing a Bean outside the Bean Definition
 
 Bean의 정의에서, Bean에게 id 속성과 name속성을 사용해서 하나 이상의 이름을 줄 수 있습니다. 이러한 이름은 같은 Bean과 동 동일한 별명일 수 있으며, 일부 상황에서 매우 유용하게 사용됩니다. 예를 들어, 응용 프로그램의 각 구성 요소가 해당 구성 요소 자체에 고유한 Bean 이름을 사용하여 공통 종속성을 참조하게 합니다.
 
@@ -414,7 +414,7 @@ Bean definition은 본질적으로 하나 이상의 객체를 생성하기 위�
 >
 > 이름에서 $ 문자는 외부의 클래스 이름으로부터 중첩된 클래스 이름을 구분하기 위해서 사용된다.
 
-### Instantiation with a Constructor
+#### Instantiation with a Constructor
 
 **생성자적 접근에의해서 Bean을 생성한다면, 모든 일반적인 클래스들은 Spring에서 사용가능하고 Spring과 호환됩니다. 즉, 개발중인 클래스를 특정한 인터페이스로 구현하거나, 특정한 방식(fashion)으로 코딩할 필요가 없다.** Bean 클래스를 간단히 명시해주는 것만으로도 충분하다. 그러나 **특정한 bean을 위해서 사용하는 IoC 타입에 의존한다면, default 생성자가 필요할 것이다.**
 
@@ -434,7 +434,7 @@ XML 기반의 configuration metadata 에서는 다음과 같이 bean class를 �
 생성자에 인수를 제공하고, 객체를 생성 한 후 객체 인스턴스 속성을 설정하는 매커니즘에 대한 자세한 내용은 
 **Injecting Dependency** 을 참고해보아라!
 
-### Instantiation with a Static Factory Method 
+#### Instantiation with a Static Factory Method 
 
  정적인 팩토리 메서드로 생성한 Bean을 정의할 때, 팩토리 메소드 자신의 이름을 명시하기 위한 **factory-method 속성**과 정적인 팩토리 메소드를 포함하는 클래스를 명시하기 위해서 **class 속성**을 사용해라. 개발자는 이 메소드를 호출할 수 있고 객체를 리턴받을 수 있다. (이것은 생성자를 통해서 객체가 생성되는 것 처럼 다루어진다.) 이러한 Bean 정의의 한가지 용도는 레거시 코드에서 정적 팩토리를 호출하는 것입니다.
 
@@ -459,7 +459,7 @@ public class ClientService{
 
 선택적인 인자를 팩토리 메소드에 제공하고 팩토리 메소드로부터 객체가 리턴된 이후에 객체 인스턴스의 속성을 setting하는 메커니즘에 대한 구체적인 방법론은 **Dependencies and Configuration in Detail** 을 보길 바란다.
 
-### Instantiation by Using an Instance Factory Method
+#### Instantiation by Using an Instance Factory Method
 
 **정적인 팩토리 메소드를 통해 인스턴스화 하는 것과 비슷하게, 인스턴스 팩토리 메소드의 인스턴스화는 Container로부터 존재하는 Bean의 non-static method를 호출해서 새로운 Bean을 만드는 방법이다.** 이러한 방법론을 사용하기 위해서는, class 속성은 비어있어야하고, **factory-bean 속성**에서 객체를 생성하기 위해 호출 할 인스턴스 메소드가 포함 된 현재(부모 또는 조상) 컨테이너의 Bean 이름을 지정하여야한다. **factory-method 속성**에 팩토리 메소드의 이름을 설정해야한다.
 
@@ -527,6 +527,216 @@ public class DefaultServiceLocator{
 **Dependencies and Configuration in Detail** 에 대해서 봐보자
 
 > Spring Documentation에서 "factory bean"은 스프링 컨테이너에서 설정되어지고 인스턴스나, 팩토리 메소드를 통해서 객체를 생성할 수 있는 Bean을 의미한다. 대조적으로 FactoryBean( 대문자 표기 ) 는 스프링의 특정한 FactoryBean을 의미한다.
+
+### 1.4.6 Method Injection
+
+대부분의 어플리케이션에서, Container의 대부분의 Bean 들은 Singleton이다. Singleton Bean이 다른 Singleton Bean이 다른 Singleton Bean과 협력하는 것이 필요하거나, non-singleton Bean이 또 다른 non-singleton Bean과 협력하는 것이 필요할 때, 개발자들은 다른 Bean들의 property로 Bean을 정의함으로써 의존성을 핸들링해야한다. 문제는 Bean의 lifecycle이 다를 때 발생한다. Singleton Bean A가 자신의 메소드 호출(invocation)에서 non-Singleton Bean B를 필요로 한다고 가정하자. Container는 Singleton Bean A를 한번 생성하고, proeprties를 설정할 수 있는 기회를 한번 얻는다. Container는 Bean A 에게 매번 필요할 때 Bean B의 새로운 인스턴스를 제공해주지 못한다.
+
+방법은 제어의 역전을 약간 없애는(forego) 것입니다. 개발자는 ApplicationContextAware 인터페이스를 구현하고 getBean("B")를 Container가 Bean A가 Bean B의 인스턴스를 필요로할 때 매번 요청할 수 있도록 구현함으로써 Container가 Bean A 를 알 수 있도록 설정할 수 있습니다.
+
+다음 예시는 이러한 접근방법을 보여줍니다.
+
+```java
+// 몇가지의 프로세스를 수행하기 위한 정적인 Command 스타일의 클래스를 사용하는 클래스
+package fiona.apple;
+
+// Spring API imports
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+public class CommandManager implements ApplicationContextAware {
+   
+   private ApplicationContext applicationContext;
+   
+   public Object process(Map commandState){
+      // 적절한 Command를 위한 새로운 인스턴스
+      Command command = createCommand();
+      // Command instance의 상태 설정
+      command.setState(commandState);
+      return command.execute();
+   }
+   
+   protected Command createCommand(){
+      // Spring API 의존성 주목
+      return this.applicationContext.getBean("command", Command.class);
+   }
+   
+   public void setApplicationContext(ApplicationContext applicationContext) throws BeansException{
+      this.applicationContext = applicationContext;
+   }
+   
+}
+```
+
+비즈니스 코드는 스프링 프레임 워크를 인식하고 스프링 프레임 워크에 연결되어 있기 때문에 위 방법은 바람직하지 않습니다. Spring IoC Container의 다소 향상된 기능인 Method Injection은 이러한 경우를 보다 더 쉽게 다룰 수 있도록 한다.
+
+#### Lookup Method Injection
+
+**Lookup method injection은 Container가 관리하는 Bean에서 method를 오버라이드 하기 위해, 그리고 Container의 또다른 이름이 지어진 Bean을 위해 lookup 결과를 리턴해준다.** lookup은 전형적으로 prototype Bean을 포함한다. Spring Framework는 메소드를 오버라이드하는 서브클래스를 동적으로 생성하기 위해서 GGLIB 라이브러리로부터의 bytecode 발생기를 사용함으로써 메소드 주입을 구현한다.
+
+> 동적인 서브클래싱이 동작하기 위해서, Spring Bean Container subclass들은 final이 되어서는 안되고, 오버라이드 되어진 메소드는 final이 되면 안된다.
+>
+> abstract 메소드를 가진 클래스를 유닛 테스트하려면 클래스를 직접 서브 클래스하고 추상 메소드의 스텁 구현을 제공해야 합니다.
+>
+> 콘크리트 클래스를 가져오는 것을 요구하는 compoenent scanning을 위해선 concrete methods가 필수입니다.
+>
+> 추가 주요 제한 사항은 lookup 메소드가 팩토리 메소드에서는 작동하지 않으며 특히 configuration 클래스의 @Bean 메소드에서는 작동하지 않는 다는 것이다. 이러한 경우에는 Container가 인스턴스 작성을 담당하지 않음으로 런타임에 발생하는 서브클래스를 생성할 수 없다.
+
+이러한 경우 이전 code의 CodeManager 클래스에서는, Spring Container가 동적으로 createCommand() 메소드의 구현을 오버라이딩한다. CommandManager 클래스는 어떠한 Spring 의존성도 가지지 않는다, 다음 예를 재구성해보자.
+
+```java
+package fiona.apple;
+
+// 더이상 Spring Import를 하지 않는다.
+public abstract class CommandManager{
+   public Object process(Object commandState){
+      // Command 인터페이스의 적절한 새로운 인스턴스 생성
+      Command command = createCommand();
+      
+      // Command 인스턴스의 state 설정
+      command.setState(commandState);
+      return command.execute();
+   }
+   
+   // 어디서 이 메소드를 구현하는가?
+   protected abstract command createCommand();
+   
+}
+```
+
+주입 되어질 메소드를 포함하는 클래스에서(이 경우에는 CommandManager), 주입되어질 메소드는 다음과 같은 형태를 요구한다.
+
+```xml
+</public|protected> [abstract] <return-type> theMethodName(no-arguments);
+```
+
+만약 추상 메소드라면, 동적으로 생성되어지는 subclass는 이러한 메소드를 구현한다. 그렇지 않으면, 동적으로 생성되어지는 subclass는 기존의 클래스에서 정의되어지는 concrete-class를 오버라이드한다.
+
+다음 예를 고려해보자.
+
+```xml
+<!-- (non-singleton)의 prototype으로 배포되어지는 정적인 Bean -->
+<bean id="myCommand" class="fiona.apple.AnsyncCommand" scope="prototype">
+	<!-- 필요한 의존성 삽입 -->
+</bean>
+
+<!-- StatefulCommandHelper를 사용하는 commandProcessor -->
+<bean id="commandManger" class="fiona.apple.CommandManager">
+	<lookup-method name="createCommand" bean="myCommand"/>
+</bean>
+```
+
+**commandManager라고 명시되어져 있는 Bean은 myCommand Bean의 새로운 인스턴스가 필요할 때마다 자신의 createCommand() 메소드를 호출한다.** 개발자는 myCommand Bean이 실제로 필요하고, singleton이고, 매 시간마다 myCommand Bean의 같은 인스턴스가 리턴되는지 prototype으로써 myCommand Bean을 배포해야한다.
+
+대안으로 annotation 기반의 component model에서, 개발자는 lookup 메소드를 @Lookup 어노테이션을 통해서 선언할 수 있다.
+
+다음의 예를 참고해보자.
+
+```java
+public abstract class CommandManager{
+   
+   public Object process(Object commandState){
+      Command command = createCommand();
+      command.setState(commandState);
+      return command.execute();
+   }
+   
+   @Lookup("myCommand")
+   protected abstract Command createCommand();
+   
+}
+```
+
+또는 보다 관용적으로(idiomatically), 개발자는 lookup method의 선언된 리턴 타입에 대응하여 target Bean을 분석할 수 있습니다. 
+
+```java
+public abstract class CommandManager {
+
+    public Object process(Object commandState) {
+        MyCommand command = createCommand();
+        command.setState(commandState);
+        return command.execute();
+    }
+
+    @Lookup
+    protected abstract MyCommand createCommand();
+}
+```
+
+추상클래스가 기본적으로 무시되는 Spring의 컴포넌트 스캔 규칙과 호환되도록하기 위해 구체적인 stub 구현으로 annotated lookup 메소드를 선언해야하는 것을 명심해라. 이러한 제한은 분명히 등록되거나 improted된 Bean 클래스에 적용할 수 없습니다.
+
+> 서로 다른 scope을 가진 target Bean을 접근하기 위한 또 다른 방법은 **ObjectFactory / Provider injection point이다.**
+>
+> 개발자는 유용하게 사용하기 위해 ServiceLocatorFactoryBean(org.springframework.beans.factory.config 패키지)을 찾을 수 있을 것입니다.
+
+#### Arbitary(임의의) Method Replacement
+
+lookup method 주입보다 덜 유용한 method 주입 형태는 다른 Bean을 구현하고 있고 관리되어지는 Bean 내에서의 임의 메소드 교체하기위한 능력을 의미한다.
+
+XML 기반의 configuration metadata에서, 개발자는 **replaced-method 요소를** 배포된 Bean의 존재하는 method 구현을 교체하기 위해서 사용할 수 있다.
+
+오버라이드 하고싶은 computerValue method를 가진 클래스를 고려해보자.
+
+```java
+public class MyValueCalculator{
+   
+	public String computerValue(String input){
+      // some real code..
+   }
+   
+   // some other methods
+}
+```
+
+org.springframework.beans.factory.support.MethodReplacer 인터페이스를 구현한 클래스는 새로운 method 정의를 제공한다. 다음 예를 보자
+
+```java
+/*
+MyValueCalculator에서 구현된 존재하는 computerValue를 오버라이드 하기 위해 사용한다.
+*/
+
+public class ReplacementComputerValue implements MethodReplacer{
+   
+   public Object reimplement(Object o, Method m, Object[] args) throws Throwable{
+      // input 값을 얻고 활용해서 계산된 결과 값을 리턴해준다.
+      String input = (String)args[0];
+      //...
+      return ...;
+   }
+}
+```
+
+기존의 클래스를 배포하고 메소드 오버라이드를 지정하기위한 Bean 정의는 다음 예제와 유사(resemble)하다.
+
+```xml
+"<bean id="myValueCalculator" class="x.y.z.MyValueCalculator">
+	<!-- 임의의 메소드 교체 -->
+   <replaced-method name="computerValue" replacer="replacementComputerValue">
+   	<arg-type>String</arg-type>
+   </replaced-method>
+</bean>
+
+<bean id="replacementComputerValue" class="a.b.c.ReplacementComputerValue"/>
+```
+
+개발자는 \<replaced-method> 요소에서 \<arg-type/> 요소를 하나이상 사용해서 오버라이딩 되는 매소드의 메소드 signature를 가리킬 수 있다.  인자를 위한 signature는 필수적이다. 메소드가 오버로드되고 클래스 내에 여러 변형이 존재하는 경우에만 해당됩니다. 편의를 위해서, 인자의 타입 문자열은 정규화된 타입 이름의 하위 문자열 일 수 있습니다. 예로들어 다음과 같은 모든것들은 java.lang.String에 일치합니다.
+
+```java
+java.lang.String
+String
+Str
+```
+
+인자들의 수는 가능한 선택지 사이에서 충분히 구분가능하기 때문에, 이러한 요약은 typing하는데 많은 시간을 절약할 수 있습니다. 인자의 타입과 일치하는 짧은 형태의 String을 사용하도록 허락함으로써
+
+---
+
+## 1.5 Bean Scopes
+
+
+
+
 
 
 

@@ -158,11 +158,11 @@ public class SimpleMovieLister{
 **Container는 다음과 같이 Bean의 의존성 확인(Resolution)한다.**
 
 - 모든 Bean들을 설정하는 configuration metadata와 함께 ApplicationContext는 생성되어지고 초기화 되어진다.
-   Configuration metadata는 XML, Java Code, Annotation에 의해서 명시되어진다.
+  Configuration metadata는 XML, Java Code, Annotation에 의해서 명시되어진다.
 - 각 Bean을 위해서 의존성들은 properties, 생성자 인자, 정적 팩토리 메소드의 인자의 형태로 표현이 되어질 것이다. Bean이 실제로 생성되어질 때 이러한 의존성들이 Bean에게 제공되어질 것이다.
 - 각각의 property 또는 생성자의 인자는 설정할 값의 실제 정의 또는 컨테이너의 다른 Bean에 대한 참조입니다.
 - 각각의 property 또는 생성자의 인수의 값은 특정한 형태에서 해당 속성 또는 생성자 인수의 실제 유형으로 변환됩니다.
-   기본적으로 Spring은 String 형태로 제공된 값을 내장 타입(int, long, String, boolean, ..) 으로 변환할 수 있습니다.
+  기본적으로 Spring은 String 형태로 제공된 값을 내장 타입(int, long, String, boolean, ..) 으로 변환할 수 있습니다.
 
 Spring Container는 컨테이너가 생성될 때 각 Bean의 구성을 확인합니다. 그러나 **Bean의 속성이 생성될 때까지 설정되지 않는다면, singleton-scoped 이고 사전에 인스턴스화 되도록(Default) Container가 생성될 때 Bean이 생성될 것이다.** 
 **그렇지 않으면 Bean은 요청받을 때 생성이 될것이다.** Bean의 생성은 잠재적으로 Bean의 의존성 그리고 Bean의 의존성의 의존성이 생성되고 할당되어질 때 생성된 Bean의 그래프를 생성합니다. 이러한 종속성간의 불일치 확인이 늦게 나타날 수 있습니다.
@@ -791,7 +791,98 @@ lazy-initialized Bean이 lazy-initialized Bean이 아닌 singleton Bean에 의�
 </beans>
 ```
 
+### What is bean wiring?
+
+- **Bean Wiring이란 Spring Container를 통해서 Bean들을 결합하는 과정이다.** 요구되어지는 Bean은 Container에게 알려져야하고, Bean을 wiring하는 시간에 어떻게 Container가 Bean을 연결짓기 위해 의존성을 삽입하는지 Container에게 알려져야한다.
+- **Spring Container내의 Bean을 결합하는 것은 Bean wiring 또는 wiring으로 알려져 있다**. Spring이 Bean을 wiring할 때, 개발자는 Container에게 어떠한 Bean들이 필요하고,  Bean들을 묶기 위해 어떠한 의존성 주입이 필요한지에 대해서 알려줘야한다.
+
 ### Autowiring Collaborators
+
+Spring Container는 수집한 Bean들간에 관계를 autowire할 수 있다. Spring은 ApplicationContext의 내용을 검증함으로써 자동적으로 Bean의 collaborators(other beans)를 확인할 수 있다.
+
+**Autowiring이 가지는 장점**
+
+- Autowiring은 생성자의 인자 또는 properties를 명시해줘야되는 필요성을 크게 감소시킨다.
+  (이번 Chapter의 다른 곳에 논의 된 Bean Template과 같은 다른 메커니즘도 이와 관련되어 논의될 가치가 있습니다.)
+- Autowiring은 객체가 변할 때 설정을 변경할 수 있습니다. 예로들어, 개발자가 어떠한 class의 의존성을 추가하고 싶다면 설정파일을 수정하지 않아도 자동적으로 의존성이 만족되어 집니다. autowiring은 개발 중에 Code base가 안정적 일 때 wiring하기 위한 변화 옵션을 무시하지 않고 특히 유용할 수 있습니다.
+
+의존성 주입을 위해서 XML 기반의 configuration metadata를 사용할 때, 개발자는 \<bean>요소의 autowire 속성을 사용해서 bean 정의를 위해서 autowire mode를 명시할 수 있습니다. autowiring 기능은 4가지의 모드가 존재하고,  Bean마다 autowiring을 명시할 수 있습니다. 
+
+다음은 4가지의 autowiring을 명시하기 위한 테이블 입니다.
+
+**Autowiring modes**
+
+- **no(default) :** autowiring 을 사용할 수 없다. Bean 참조는 ref 요소에 의해서 정의되어야 한다. 기본적인 setting의 변화는 큰 배포를 위해서 추천하지 않는다. collaborators를 명시하는 것은 제어를 더 좋게, 명확하게 할 수 있다.
+  어느 정도 까지는 (To some extent), 시스템 구조를 문서화합니다.
+- **byname : **property name에 의해서 Autowiring된다. Spring은 autowired가 필요한 property 로써 같은 name의 Bean을 찾습니다. 예로들어, 만약 Bean의 정의가 name에 의해서 autowire하기 위해 설정되어 지고 master property를(setMaster(..) method) 갖는다면, Spring은 master라는 이름이 붙여진 Bean 정의를 찾고 이를 사용하여 property를 설정합니다.
+- **byType : **property 타입의 Bean 한개가(정확히 한개)  컨테이너에 있는 경우, property가 autowired되어 집니다. 하나 이상 존재한다면, Bean을 위해 byType autowiring을 사용할 수 없다는 치명적인(fatal) 예외가 던져질 것이다.  만약 어떠한 Bean도 match되지 않는다면, 어떠한 것도 일어나지 않을 것이다.
+- **constructor :** byType과 유사하지만(Analogous) 생성자 인수를 이용하는 mode이다. 컨테이너에 생성자 인자 타입의 Bean이 정확히 하나가 아니면, 치명적인 에러가 발생되어질 것이다.
+
+byType과 constructor autowiring 모드를 사용하면, 개발자는 배열과 타입이 정해진 collection을 연결지을 수 있다. 이러한 경우에서 type을 예측하는 container안에 모든 autowire 대상자는 의존성을 만족해야한다. 만약 예측된 key Type이 String 이라면 개발자는 강한 타입의 Map 인스턴스를 autowire할 수 있다. autowire된 Map 인스턴스의 값은 예측되는 유형을 만족하는 Bean Instance로 구성되어 있다. 그리고 Map 인스턴스의 key는 대응되는 Bean name을 포함한다.
+
+### Limitations and Disadvantages of Autowiring
+
+Autowiring은 프로젝트 전반에 걸쳐 꾸준히 사용되어질 때 가장 효과적이다. 만약 autowiring이 꾸준히 사용되지 않는다면, 개발자들은 한개 이상의 Bean을 정의하기 위해 autowiring을 사용하는 것에 혼동을 느낄 것이다.
+
+**autowiring의 단점과 한계**
+
+- property와 constructor-arg를 사용해서 의존성을 명확히 명시하면 항상 autowiring을 오버라이드 한다. 개발자는 간단한 primitives, Strings, Classes(간단한 properties의 배열)과 같은 properties를 autowire할 수 없다. 이러한 제한은 의도적으로 설계되어진 것입니다.
+- Autowiring은 직접 wiring을 명시하는 것 보다 덜 정확하다. 앞의 표에서 언급했듯이, Spring은 예기치 않은 결과를 발생할 수 있는 모호한(ambiguity) 경우 추측을 피하기 위해 주의를 기울입니다. Spring이 관리하는 객체 사이의 관계는 더이상 명확히 문서화 되지 않습니다.
+- Spring Container에서 문서를 생성할 수 있는 도구에는 wiring 정보가 제공되어지지 않을 수 있다.
+- Container 내의 다중 Bean 정의에선 autowired될 setter 메소드 또는 생성자 인수로 지정된 타입과 일치할 수 있습니다. 배열, 컬렉션, 맵 인스턴스에서 이러한 것들이 필수적으로 문제는 아닙니다. 그러나 단일 값을 예측하는 의존성을 위해 이러한 모호성은 임의로 해결되면 안됩니다. 만약 사용할 수 있는 Bean의 정의가 유일하지 않다면, 예외가 발생할 것입니다.
+
+후자의 시나리오에서, 개발자는 다양한 옵션을 갖습니다.
+
+- 명시적 wiring을 위해서 autowiring을 포기(abandon)하십시요.
+- **autowire-candidate 속성을 false**로 설정하는 것을 통해 Bean 정의에서 autowiring을 피하세요
+- **\<bean/>요소의 primary 속성을 true**로 설정하는 것을 통해 single Bean 정의를 최우선 후보자로 지정하세요.
+- annotation-based configuration 과 함 보다 세밀한 제어를 구현하세요.
+
+### Excluding a Bean from Autowiring
+
+각각의 Bean 마다, 개발자들은 autowiring으로부터의 Bean을 제외할 수 있다. XML 기반의 Spring에서, \<bean/> 요소의 autowire-candidate 속성을 false로 설정하면된다. Container는 특정한 Bean 정의를 autowiring infrastructure에서 사용할 수 없게 합니다.(@Autowired 애노테이션 포함)
+
+> autowire-candidate 속성은 오직 type 기반의 autowiring에만 영향을 미친다. 명시된 Bean이 autowire candidate로 명시되어 있지 않음에도 불구하고 이름에 의한 reference에는 영향을 미치지 못한다. 만약 name이 일치하면 autowiring은 Bean을 주입할 것이다.
+
+개발자는 Bean의 name에 대응해서 pattern-matching 기반의 autowire candidates를 제한할 수 있다. 가장 상위의 \<beans/> 요소는 default-autowire-candidates 속성내에 하나 이상의 패턴을 적용할 수 있다. 예로들어, Repository라는 마지막 이름을 가진 모든 Bean의 autowire 후보 상태를 제한하고자 한다면, *Repository라고 값을 제공하면 된다. 다중 패턴을 재공하고 싶다면, default-autowire-candidates 속성에 콤마로 구분하여서 패턴을 제공하면 된다. Bean 정의의 autowire-candidate 속성에 대한 명확한 true와 false의 값이 항상 우선합니다.(take precedence) 이러한 Bean에서는 패턴 매칭 규칙이 적용되지 않습니다.
+
+개발자가 autowiring으로부터 다른 Bean이 주입되는 것을 완전히 막고 싶다면 이러한 기술은 매우 유용합니다. 제외된 Bean들이 autowiring을 사용함으로써 설정이 되어지지 않는다는 것을 의미하지 않는다. 이러한 Bean들 자체가 다른 Beane들을 autowiring 하기위한 후보자가 아니라는 것을 의미한다.
+
+### 1.4.6 Method Injection
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
