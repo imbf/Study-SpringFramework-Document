@@ -852,7 +852,7 @@ Autowiring은 프로젝트 전반에 걸쳐 꾸준히 사용되어질 때 가장
 
 대부분의 어플리케이션에서, Container의 대부분의 Bean 들은 Singleton이다. Singleton Bean이 다른 Singleton Bean이 다른 Singleton Bean과 협력하는 것이 필요하거나, non-singleton Bean이 또 다른 non-singleton Bean과 협력하는 것이 필요할 때, 개발자들은 다른 Bean들의 property로 Bean을 정의함으로써 의존성을 핸들링해야한다. 문제는 Bean의 lifecycle이 다를 때 발생한다. Singleton Bean A가 자신의 메소드 호출(invocation)에서 non-Singleton Bean B를 필요로 한다고 가정하자. Container는 Singleton Bean A를 한번 생성하고, proeprties를 설정할 수 있는 기회를 한번 얻는다. Container는 Bean A 에게 매번 필요할 때 Bean B의 새로운 인스턴스를 제공해주지 못한다.
 
-방법은 제어의 역전을 약간 없애는(forego) 것입니다. 개발자는 ApplicationContextAware 인터페이스를 구현하고 getBean("B")를 Container가 Bean A가 Bean B의 인스턴스를 필요로할 때 매번 요청할 수 있도록 구현함으로써 Container가 Bean A 를 알 수 있도록 설정할 수 있습니다.
+방법은 제어의 역전을 약간 없애는(forego) 것입니다. 개발자는 ApplicationContextAware 인터페이스를 구현하고 getBean("B")를 Container가 Bean A가 Bean B의 인스턴스를 필요로 할 때 매번 요청할 수 있도록 구현함으로써 Container가 Bean A 를 알 수 있도록 설정할 수 있습니다.
 
 다음 예시는 이러한 접근방법을 보여줍니다.
 
@@ -1049,58 +1049,5 @@ Str
 ```
 
 인자들의 수는 가능한 선택지 사이에서 충분히 구분가능하기 때문에, 이러한 요약은 typing하는데 많은 시간을 절약할 수 있습니다. 인자의 타입과 일치하는 짧은 형태의 String을 사용하도록 허락함으로써
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
