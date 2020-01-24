@@ -67,7 +67,106 @@ request, session, application, websocket 범위는 web-aware Spring ApplicationC
 
 #### Initial Web Configuration
 
-####  
+request, session, application, websocket 레벨에서 (web 범위의 Bean) Bean의 범위지정(scoping)을 지원하기 위해, 개발자가 Bean을 정의하기 전에 몇가지의 초기 configuration이 필요하다. ( 이러한 초기 설정은 singleton과 prototype scope와 같은 표준 범위 Bean에는 포하되지 않는다.)
+
+**이러한 초기 설정을 수행하는 방법은 특정 서블릿 환경에 의존합니다.**
+
+**만약 Spring Web MVC 내에서 범위가 설정된 Bean에 접근한다면, 사실상 DispatcherServlet에 처리되는 요청 내에서 어떠한 특별한 설정도 필요하지 않습니다. DispatcherServlet은 이미 모든 관련된 상태를 노출합니다.**
+
+Spring DispatcherServlet 외부에서 요청이 처리되는 Servlet 2.5 web Container를 사용하는 경우(ex. JSF, Structs를 사용하는 경우), 개발자는 org.springframework.web.context.request.RequestContextListener ServletRequestListener를 등록해야한다. Servlet 3.0 이상부터는, WebApplicationInitializer 인터페이스를 사용함으로써 이러한 초기 설정들이 프로그램적으로 행해진다. 대안으로 또는 더 오래된 Container를 위해서, 다음의 선언을 application의 web.xml 파일에 추가해야한다.
+
+```xml
+<web-app>
+	<!-- ... -->
+   
+   <listener>
+   	<listener-class>
+      	org.springframework.web.context.request.RequestContextListener
+      </listener-class>
+   </listener>
+   
+	<!-- ... -->
+</web-app>
+```
+
+그 대신에, 리스너 설정에 문제가 있는 경우, Spring의 RequestContextFilter를 사용하는 것을 고려해보아라. Filter mapping은 관련된 web application 설정에 의존할것이고, 개발자는 이러한 web application configuration을 적절히 수정해야한다.
+
+다음은 web application의 filter 파트를 보여준다.
+
+```xml
+<web-app>
+	...
+   <filter>
+   	<filter-name>requestContextFilter</filter-name>
+      <filter-class>org.springframework.web.filter.RequestContextFilter</filter-class>
+   </filter>
+   <filter-mapping>
+   	<filter-name>requestContextFilter</filter-name>
+      <url-patter>/*</url-patter>
+   </filter-mapping>
+   ...
+</web-app>
+```
+
+DispatcherServlet, RequestContextListener, RequestContextFilter 모두 정확히 같은 역할을 수행한다. 즉(namely) HTTP request 객체를 해당 요청을 처리하는 Thread에 바인딩합니다. 이를 통해 요청 및 세션 범위의 Bean을 call chain에서 추가로 사용할 수 있습니다.
+
+#### Request scope
+
+bean의 정의를 위한 XML 기반의 configuration을 고려해보자
+
+```xml
+<bean id="loginAction" class="com.something.LoginAction" scope="request"/>
+```
+
+**Spring Container는 매번 각 HTTP request에 대하여 loginAction Bean definition 사용함으로써 LoginAction Bean 의 새로운 인스턴스를 생성합니다.** 즉, loginAction Bean은 HTTP request level에서 범위가 설정됩니다. 개발자는 원하는 만큼의 생성된 인스턴스의 내부 상태를 변경할 수 있습니다. 같은 loginAction Bean 정의에서 생성된 다른 인스턴스들은 이러한 상태의 변화를 볼 수 없기 때문입니다. 이러한 Bean들은 개별 요청에 따라 특별(particular)하다. request의 process가 완료될 때, request로 범위가 지정된 Bean은 소멸됩니다.(discard)
+
+annotation 중심의 compoents 또는 Java configuration을 사용할 때, @RequestScope 애노테이션은 component를 request 범위에 할당하는데 사용됩니다.
+
+다음은 어떻게 사용하는 지에 대한 예제 입니다.
+
+```java
+@RequestScope
+@Component
+public class LoginAction{
+   // ...
+}
+```
+
+#### Session Scope
+
+Bean 정의를 위한 다음 XML configuration을 고려해 보자.
+
+```xml
+<bean id="userPreferences" class="com.something.UserPreferences" scope="session"/>
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
