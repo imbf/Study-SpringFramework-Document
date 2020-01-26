@@ -179,15 +179,117 @@ Spring 2.5 부터, Bean lifecycle의 행동을 제어하기 위해 3가지 옵�
 
 #### Startup and Shutdown Callbacks (콜백의 시작과 종료)
 
+**`Lifecycle` 인터페이스는 고유한 lifecycle 요구사항이 있는 모든 객체를 위해 필수 메소드를 정의한다.** (예로들어, 몇 가지의 백 그라운드 작업의 중지 및 실행과)
 
+```java
+public interface Lifecycle{
+   
+   void start();
+   
+   void stop();
+   
+   boolean isRunning();
+   
+}
+```
 
+Spring이 관리하는 어떤 객체도  `Lifecycle` 인터페이스를 구현할 것입니다. 그리고 `ApplicationContext` 자체가 시작과 중지 신호를 받을 때, ApplicationContext는 문맥 안에서 정의된 모든 `Lifecycle ` 구현에 이러한 호출을 cascade(연결짓습니다. `LifecycleProcessor`에 위임하여 이를 수행합니다.
 
+다음의 list를 참고해보세요.
 
+```java
+public interface LifecycleProcessor extends Lifecycle{
+   
+   void onRefresh();
+   
+   void onClose();
+}
+```
 
+`LifecycleProcessor` 는 그 자체로 `Lifecycle` 인터페이스의 확장을 의미한다. `LifecycleProcessor`는 refresh 되고 close 될 때 상황에 반응하기 위해서 2가지의 다른 메소드를 추가하였다.
 
+>  **일반적인 `org.springframework.context.Lifecycle` 인터페이스는 명백한 시작과 중지 알림에 대한 일반적인 계약이며 context refresh 시 자동 시작을 의미하지 않습니다.** 특정한 Bean의 자동시작을 더 섬세한 제어를 위해서는 `org.springframework.context.SmartLifecycle`을 대신 구현할 것을 고려해보아라.
+>
+> **또한, 중지 알림은 소멸 전에 발생할 것이라는 것을 보증하지 않는다는 것을 명심해라. 일반적으로 종료하면, 모든 Lifecycle Bean은 일반 소멸(destruction) 콜백이 전달(propagated)되기 전에 중지(stop) 알림을 첫번째로 받습니다.** 그러나 컨텍스트 수명 동안의 hot refresh 또는 중단된 refresh 시도시 destroy 메소드만 호출됩니다.
 
+시작(startup) 및 종료(shutdown) 호출 순서가 중요할 수 있습니다. 만약 2개의 객체 사이에 depends-on 관계가 존재한다면, 의존하는 측은 이것의 의존성이 주입된 후 실행하고, 의존성이 주입되기 전에 중지(stop)된다. 그러나, 때때로(at times), 직접적인 의존성은 알려져 있지 않습니다. 특정 유형의 객체는 다른 유형의 객체보다 먼저 시작해야한다는 것을 알고있을 겁니다. 이러한 경우에 `SmartLifecycle` 인터페이스는 또다른 옵션을 지정할 수 있습니다. 즉, 슈퍼인터페이스인 `Phased`에 정의된 `getPhase()` 메소드.
 
+다음은 `Phased` 인터페이스의 정의를 보여준다.
 
+```java
+public interface Phased{
+	
+   int getPhase();
+   
+}
+```
+
+다음은 `SmartLifecycle` 인터페이스의 정의를 보여준다.
+
+```java
+public interface SmartLifecycle extends Lifecycle, Phased {
+   
+   boolean isAutoStartup();
+   
+   void stop(Runnable callback);
+}
+```
+
+시작할 때, 가장 낮은 단계의 객체가 첫번째로 실행한다. 멈출 때, 반대의 순서를 따른다. 그러므로 `SmartLifecycle`을 구현하고 `getPhase()` 메소드가 `Integer.MIN_VALUE`을 리턴하는 객체는 시작하기 위한 첫번째 객체이거나 중지하기 위한 마지막 객체 중 하나이다. 스펙트럼의 다른 쪽 끝에서, `Integer.MAX_VALUE`의 단계 값은 객체가 마지막으로 시작되고 먼저 중지되어야함을 나타낸다.(아마도 다른 실행중인 프로세스에 의존하기 때문이다.). 단계 값을 고려할 때 `SmartLifecycle`을 구현하지 않는 일반 `Lifecycle` 객체의 기본 단계는 `0`임을 알아야 하는 것이 중요하다. 따라서, 음수의 단계 값은 객체가 표준 구성 요소보다 먼저 시작함을 나타낸다. 양수의 단계 값에 대해서는 반대입니다.
+
+**`SmartLifecycle`에 의해서 정의된 stop 메소드는 콜백을 수용합니다.** 구현의 종료 프로세스가 완료된 후 어떤 구현도 해당 콜백의 `run()` 메소드를 호출해야 합니다. **`LifecycleProcessor` 인터페이스의 기본 구현인 `DefaultLifecycleProcessor`가 각 단계의 객체 그룹이 callback을 호출하기 위해 timeout 값까지 기다리기 때문에, 필요한 경우 비동기 종료가 가능합니다.** 단계당 timeout의 기본값은 30초이다. 개발자는 context안에 lifecycleProcessor라고 명명한 Bean을 정의함으로써 기본 lifecycle 프로세서 인스턴스를 오버라이드 할 수 있다. 만약 개발자가 오직 timeout만 수정하고 싶다면, 다음과 같이 정의하면 충분하다(suffice).
+
+```xml
+<bean id="lifecycleProcessor" class="org.springframework.context.support.DefaultLifecycleProcessor">
+   <!-- timeout 값(milliseconds) -->
+   <property name="timeoutPerShutdownPhase" value="10000"/>
+</bean>
+```
+
+앞에서 언급했듯이, LifecycleProcessor 인터페이스는 context의 refreshing and closing 을 위한 콜백 메소드도 정의한다. 후자는 `stop()`이 명시적으로 호출된 것처럼 종료 프로세스를 진행하지만 context가 닫힐 때 발생합니다. 반면에 refresh 콜백은 `SmartLifecycle` Bean의 또 다른 특징을 활성화합니다. context가 refresh 되어질 때(모든 객체가 인스턴스화 되고 초기화 되어지고 난 후), refresh 콜백이 호출된다. 그 시점에서(at that point), 기본 lifecycle processor는 각 `SmartLifecycle` 객체의 `isAutoStartup()` 메소드에 의해 리턴되어진 boolean 값을 체크합니다. 만약 `true`라면, 컨텍스트 또는 자신의 `start()` 메소드의 명백한 호출을 위해서 기다리는 것 대신에 해당 시점에서 객체가 시작되어집니다.(context refresh와는 다르게, context 시작은 기본 context 구현을 위해서 자동적으로 실행되지 않습니다.) `phase` 값과 "depends-on" 관계는 이전에 묘사한 것처럼 시작 순서를 결정합니다.
+
+#### Shutting Down the Spring IoC Container Gracefully in Non-Web Applications                     (웹 어플리케이션이 아닌 곳에서의 정상적으로(Gracefully) Spring IoC Container의 종료)
+
+> 이번 섹션은 웹 어플리케이션이 아닌 어플리케이션에서 적용할 수 있다. Spring의 웹 기반의 `ApplicationContext` 구현에는 관련된 web 어플리케이션이 종료될 때 Spring IoC Container를 정상적으로 종료하기 위한 코드가 이미 (정상적 장소에) 있습니다.
+
+웹이 아닌 어플리케이션 환경에서(ex. rich client desktop environment) Spring의 IoC Container를 사용한다면, JVM 종료 후크(hook)를 등록하세요. 이렇게 하는 것은 정상적인 종료를 확실하게 하고, Singleton Bean에  관련된 destory 메소드를 호출하는 것을 보장합니다. 모든 자원이 release 되기 위해. 개발자는 destory 콜백을 정확히 설정하고 구현해야합니다.
+
+종료 후크(hook)를 등록하기 위해, `configurableApplicationContext` 인터페이스에서 선언되어진 `registerShutdownHook()` 메소드를 구현해라.
+
+다음의 예제를 참고해라.
+
+```java
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+public final class Boot{
+   
+   public static void main(final String[] args) thorws Exception{
+   	ConfigurableApplicationContext ctx = new ClassPathXmlApplicationContext("beans.xml");
+      
+      // 위의 context에 대한 종료 hook 추가
+      ctx.registerShutdown();
+      
+      // 애플리케이션 실행
+      
+      // 메인 메소드가 존재하고, 후크는 앱이 종료하기전에 호출된다.
+   }
+}
+```
+
+### 1.6.2 `ApplicationContextAware` and `BeanNameAware`
+
+**`ApplicationContext`가 `org.springframework.context.ApplicationContextAware` 인터페이스를 구현하는 객체 인스턴스를 생성할 때, 그 인스턴스는 해당 ApplicationContext에 대한 참조를 제공받습니다.** 
+
+다음의 예제는 AplicationContextAware 인터페이스의 정의를 보여줍니다.
+
+```java
+public interface ApplicationContextAware{
+	void setApplicationContext(ApplicationContext applicationContext) throws BeansException;
+}
+```
+
+**그러므로, Bean은 ApplicationContext 인터페이스를 통해 또는 이러한 인터페이스의 서브클래스로 알려진 서브클래스에 대한 참조를 캐스팅하여 Bean을 작성한 ApplcationContext를 프로그래밍 방식으로 조작할 수 있다.**
 
 
 
