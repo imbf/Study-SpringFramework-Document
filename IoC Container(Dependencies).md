@@ -846,7 +846,7 @@ Autowiring은 프로젝트 전반에 걸쳐 꾸준히 사용되어질 때 가장
 
 개발자는 Bean의 name에 대응해서 pattern-matching 기반의 autowire candidates를 제한할 수 있다. 가장 상위의 \<beans/> 요소는 default-autowire-candidates 속성내에 하나 이상의 패턴을 적용할 수 있다. 예로들어, Repository라는 마지막 이름을 가진 모든 Bean의 autowire 후보 상태를 제한하고자 한다면, *Repository라고 값을 제공하면 된다. 다중 패턴을 재공하고 싶다면, default-autowire-candidates 속성에 콤마로 구분하여서 패턴을 제공하면 된다. Bean 정의의 autowire-candidate 속성에 대한 명확한 true와 false의 값이 항상 우선합니다.(take precedence) 이러한 Bean에서는 패턴 매칭 규칙이 적용되지 않습니다.
 
-개발자가 autowiring으로부터 다른 Bean이 주입되는 것을 완전히 막고 싶다면 이러한 기술은 매우 유용합니다. 제외된 Bean들이 autowiring을 사용함으로써 설정이 되어지지 않는다는 것을 의미하지 않는다. 이러한 Bean들 자체가 다른 Beane들을 autowiring 하기위한 후보자가 아니라는 것을 의미한다.
+ggg개발자가 autowiring으로부터 다른 Bean이 주입되는 것을 완전히 막고 싶다면 이러한 기술은 매우 유용합니다. 제외된 Bean들이 autowiring을 사용함으로써 설정이 되어지지 않는다는 것을 의미하지 않는다. 이러한 Bean들 자체가 다른 Beane들을 autowiring 하기위한 후보자가 아니라는 것을 의미한다.
 
 ### 1.4.6 Method Injection (다시 한번 봐야될 가치가 충분히 있다.)
 
