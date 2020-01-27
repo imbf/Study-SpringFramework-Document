@@ -798,7 +798,7 @@ lazy-initialized Bean이 lazy-initialized Bean이 아닌 singleton Bean에 의�
 
 ### Autowiring Collaborators
 
-Spring Container는 수집한 Bean들간에 관계를 autowire할 수 있다. Spring은 ApplicationContext의 내용을 검증함으로써 자동적으로 Bean의 collaborators(other beans)를 확인할 수 있다.
+Spring Container는 collaborators Bean들간에 관계를 autowire할 수 있다. Spring은 `ApplicationContext의` 내용을 검증함으로써 자동적으로 Bean의 collaborators(other beans)를 확인할 수 있다.
 
 **Autowiring이 가지는 장점**
 
@@ -812,7 +812,7 @@ Spring Container는 수집한 Bean들간에 관계를 autowire할 수 있다. Sp
 
 **Autowiring modes**
 
-- **no(default) :** autowiring 을 사용할 수 없다. Bean 참조는 ref 요소에 의해서 정의되어야 한다. 기본적인 setting의 변화는 큰 배포를 위해서 추천하지 않는다. collaborators를 명시하는 것은 제어를 더 좋게, 명확하게 할 수 있다.
+- **no(default) :** <u>autowiring 을 사용할 수 없다. Bean 참조는 ref 요소에 의해서 정의되어야 한다</u>. 기본적인 setting의 변화는 큰 배포를 위해서 추천하지 않는다. collaborators를 명시하는 것은 제어를 더 좋게, 명확하게 할 수 있다.
   어느 정도 까지는 (To some extent), 시스템 구조를 문서화합니다.
 - **byname : **property name에 의해서 Autowiring된다. Spring은 autowired가 필요한 property 로써 같은 name의 Bean을 찾습니다. 예로들어, 만약 Bean의 정의가 name에 의해서 autowire하기 위해 설정되어 지고 master property를(setMaster(..) method) 갖는다면, Spring은 master라는 이름이 붙여진 Bean 정의를 찾고 이를 사용하여 property를 설정합니다.
 - **byType : **property 타입의 Bean 한개가(정확히 한개)  컨테이너에 있는 경우, property가 autowired되어 집니다. 하나 이상 존재한다면, Bean을 위해 byType autowiring을 사용할 수 없다는 치명적인(fatal) 예외가 던져질 것이다.  만약 어떠한 Bean도 match되지 않는다면, 어떠한 것도 일어나지 않을 것이다.
@@ -848,7 +848,7 @@ Autowiring은 프로젝트 전반에 걸쳐 꾸준히 사용되어질 때 가장
 
 개발자가 autowiring으로부터 다른 Bean이 주입되는 것을 완전히 막고 싶다면 이러한 기술은 매우 유용합니다. 제외된 Bean들이 autowiring을 사용함으로써 설정이 되어지지 않는다는 것을 의미하지 않는다. 이러한 Bean들 자체가 다른 Beane들을 autowiring 하기위한 후보자가 아니라는 것을 의미한다.
 
-### 1.4.6 Method Injection
+### 1.4.6 Method Injection (다시 한번 봐야될 가치가 충분히 있다.)
 
 대부분의 어플리케이션에서, Container의 대부분의 Bean 들은 Singleton이다. Singleton Bean이 다른 Singleton Bean이 다른 Singleton Bean과 협력하는 것이 필요하거나, non-singleton Bean이 또 다른 non-singleton Bean과 협력하는 것이 필요할 때, 개발자들은 다른 Bean들의 property로 Bean을 정의함으로써 의존성을 핸들링해야한다. 문제는 Bean의 lifecycle이 다를 때 발생한다. Singleton Bean A가 자신의 메소드 호출(invocation)에서 non-Singleton Bean B를 필요로 한다고 가정하자. Container는 Singleton Bean A를 한번 생성하고, proeprties를 설정할 수 있는 기회를 한번 얻는다. Container는 Bean A 에게 매번 필요할 때 Bean B의 새로운 인스턴스를 제공해주지 못한다.
 
