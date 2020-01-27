@@ -174,7 +174,7 @@ AspectJ(현재 기능 측면에서 가장 풍부하고 자바 엔터프라이즈
 
 ApplicationContext 인터페이스의 여러 구현은 Spring과 함께 제공되어 집니다. 독립형(stand-alone) 어플리케이션에서, ApplicationContext는 **ClassPathXmlApplication** 또는 **FileSystemXmlApplicationContext** 클래스의 인스턴스를 생성한다. configuration Metadata를 정의하기 위한 가장 전통적인 방법은 XML을 이용하는 것이다. 이 대신 Java Annotation 또는 metadata 형태의 코드를 사용할 수 있다. 
 
-<img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200118133854379.png" alt="image-20200118133854379" style="zoom:50%;" />
+<img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200127123502518.png" alt="image-20200127123502518" style="zoom:50%;" />
 
 위에 그려진 다이어그램은 스프링이 어떻게 동작하는지 hight-level의 뷰를 제공합니다. 어플리케이션의 클래스들은 configuration metadata와 결합하여 ApplicationContext가 생성 및 초기화 된 후 완전히 구성되고 실행가능한 시스템 또는 어플리케이션을 가질 수 있습니다.
 
@@ -349,7 +349,7 @@ Spring IoC Container는 하나이상의 Bean들을 관리한다. 이러한 Bean�
 
 이러한 메타 데이터는 각 Bean 정의를 구성하는 특정 세트로 변환됩니다. 다음 표는 이러한 속성을 설명합니다.
 
-<img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200118154914051.png" alt="image-20200118154914051" style="zoom:50%;" />
+<img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200127123545398.png" alt="image-20200127123545398" style="zoom:50%;" />
 
 특정 Bean을 작성하는 방법에 대한 정보가 포함된 Bean 정의 외에도, ApplicationContext 구현은 외부의 Container에서 생성된 객체의 등록을 허용한다. 이러한 것들은 ApplicationContext의 BeanFactory에 **getBeanFactory()** 메소드를 활용해서 접근하면 할 수 있다. getBeanFactory() 는 BeanFactory의 **DefaultListableBeanFactory** 구현을 리턴한다. DefaultListableBeanFactory 는 **registersingleton(..)** 과 **registerBeanDefinition(..)**을 통해서 이러한 Bean 등록을 지원해준다. 그러나 전형적인 어플리케이션은 기본적인 bean 설정 메타데이터를 통해 정의된 bean과 작업을 진행한다.
 
