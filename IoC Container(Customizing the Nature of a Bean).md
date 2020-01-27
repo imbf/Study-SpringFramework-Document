@@ -13,7 +13,7 @@ Container의 Bean 수명주기 관리와 상호작용하기 위해서, 개발자
 
 > JSR-250 `@PostContruct` 와 `@PreDestory` 어노테이션은 일반적인 스프링 어플리케이션에서 생명주기 콜백을 받기위한 가장 좋은 관습(습관, 행동)으로 여겨진다. 이러한 어노테이션을 사용하는 것은 Bean이 Spring의 특정한 인터페이스에 연결(couple)되어 있지 않다는 것을 의미합니다. 
 >
-> 만약 개발자가 JSR-250 어노테이션을 사용하지 않기 원하면서, Spring의 특정한 인터페이스와의 연결도 하지 않길 원한다면, `init-method` 와 `destory-method` Bean 정의 metadata를 고려해보면 좋다.
+> 만약 개발자가 JSR-250 어노테이션을 사용하지 않기 원하면서, Spring의 특정한 인터페이스와의 연결도 하지 않길 원한다면, `init-method` 와 `destory-method` Bean 정의 metadgata를 고려해보면 좋다.
 
 내부적으로, Spring Framework는 `BeanPostProcessor` 구현을 사용하여서 적절한 메소드를 찾고 호출 할 수 있는 모든 콜백 인터페이스를 처리합니다. 만약 개발자가 사용자 정의 기능 또는 스프링이 지원해주지 않는 수명주기 행동이 필요하다면, `BeanPostProcessor`를 사용해서 구현할 수 있다. 더 많은 정보가 필요하다면, Container Extension Points를 보아라.
 
@@ -289,7 +289,66 @@ public interface ApplicationContextAware{
 }
 ```
 
-**그러므로, Bean은 ApplicationContext 인터페이스를 통해 또는 이러한 인터페이스의 서브클래스로 알려진 서브클래스에 대한 참조를 캐스팅하여 Bean을 작성한 ApplcationContext를 프로그래밍 방식으로 조작할 수 있다.**
+**그러므로, Bean은 `ApplicationContext` 인터페이스를 통해 또는 이러한 인터페이스(추가적인 기능을 제공하는 `ConfigurableApplicationContext` 인터페이스)의 서브클래스로 알려진 서브클래스에 대한 참조를 캐스팅하여 Bean을 작성한 ApplcationContext를 프로그래밍 방식으로 조작할 수 있다.** 한 가지의 용도는 다른 Bean을 프로그래밍 방식으로 검색하는 것이다. 이러한 방식은 때때로 매우 유용하다. 하지만, 일반적으로 이러한 방식의 코딩은 피하는 것이 좋다. 이러한 방식의 코딩은 Code를 Spring과 연결시키고, properties로써 Bean에게 collaborator를 제공하는 IoC 스타일을 따르지 않기 때문이다. `ApplicationContext`의 다른 메소드는 file resources, publishing application events, accessing a `MessageSource`에 대한 접근을 지원합니다. 이러한 추가적인 기능들은 Additional Capabilities of the `ApplicationContext`에 설명되어 있습니다.
+
+Autowiring은 `ApplicationContext` 에 대한 참조를 얻는 또 다른 대안 입니다. 전통적인 `constructor`와 `byType` autowiring modes는 생성자의 인자 또는 setter 메소드의 인자를 위해 `ApplicationContext` 타입의 의존성을 제공할 수 있습니다. **더 유연하고 fields와 여러개의 parameter 메소드를 autowire 하기위한 기술을 포함하기 위해서, annotation 기반의 autowiring 기술을 사용해라**. 만약 이러한 기술을 사용한다면, `ApplicationContext`는 해당 필드, 생성자 또는 메서드가 `@Autowired` 애노테이션을 포함하는 경우 `ApplicationContext` 타입을 예상하는 필드, 생성자, 인스 또는 매서드 매개 변수로 Autowired 됩니다. 더 많은 정보를 원한다면, `@Autowired`를 참고하세요.
+
+> **Autowiring이란 무엇인가?**
+>
+> - Autowiring은 한 Bean의 인스턴스를 또 다른 Bean의 인스턴스의 원하는 필드에 배치하여 발생합니다. 두 클래스는 모두 Bean이어야 합니다. 즉, `ApplicationContext`에 따라서 Bean들은 정의되어야 합니다.
+> - Spring framework에서의 autowiring 의 기능은 개발자가 다른 객체의 의존성을 암묵적으로 주입할 수 있게끔 한다. 내부적으 setter 또는 생성자 주입을 사용한다.
+>   기본 및 문자열 값을 주입하는데 Autowiring을 사용할 수 없고, reference를 주입하는데만 사용한다.
+
+`ApplicationContext`가 `org.springframework.beans.factory.BeanNameAware` 인터페이스를 구현하는 클래스를 생성할 때, 이러한 클래스는 관련된 객체 정의에서 정의된 name에 대한 참조를 제공받습니다.
+
+다음은 BeanNameAware 인터페이스의 정의를 보여준다.
+
+```java
+public interface BeanNameAware{
+   
+   void setBeanName(String name) throws BeansException;
+   
+}
+```
+
+콜백은 일반 Bean properties의 채운 후 `InitializingBean`, `afterPropertiesSet`, 사용자 init 메소드와 같은 초기화 콜백 전에 호출됩니다.
+
+> **aware** : ~을 알고있는, 눈치 채고 있는
+
+### 1.6.3 Other `Aware` Interfaces
+
+`ApplicationContextAware`과 `BeanNameAware` 외에도, Spring은 다양한 범위의  `Aware` 콜백 인터페이스를 지원한다.
+이러한 `Aware` 콜백 인터페이스는 Bean이 컨테이너에 특정 인프라 의존성이 필요함을 표시하도록하는 인터페이스이다.
+일반적으로 이름은 의존성 타입을 나타냅니다.
+
+다음은 가장 중요한  `Aware` 인터페이스를 요약한 테이블 입니다.
+
+![image-20200127141132088](/Users/baejongjin/Library/Application Support/typora-user-images/image-20200127141132088.png)
+
+이러한 인터페이스를 사용하는 것은 코드를 Spring API와 연결시키고 IoC 스타일을 따르지 않는다는 것을 다시한번 명심해라.
+결과적으로, 컨테이너에 프로그래밍 방식으로 엑세스 해야하는 infrastructure Bean에게 권장됩니다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
