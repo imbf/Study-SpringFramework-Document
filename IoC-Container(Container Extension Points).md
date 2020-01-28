@@ -130,25 +130,115 @@ org.springframework.scripting.groovy.GroovyMessenger@272961
 
 `ApplicationContext` 는 `BeanFactoryPostProcessor` 인터페이스를 구현하는 모든 Bean을 자동으로 감지합니다. `ApplicationContext`는 이러한 Bean들을 bean factory post-processor로써 적절한 시간에 사용합니다. 개발자는 이러한 post-processor Bean을 개발자가 원하는 어느 Bean에 배치할 수 있습니다.
 
-> `BeanPostProcessor`와 마찬가지로(As with),  개발자는 `BeanFactoryPostProcessor` 늦게 초기화 하도록 설정하는 것을 원하지 않을 것이다.
+> `BeanPostProcessor`와 마찬가지로(As with), 개발자는 `BeanFactoryPostProcessor` 늦게 초기화 하도록 설정하는 것을 원하지 않을 것이다. 만약 어떠한 Bean도 `Bean(Factory)PostProcessor` 를 참조하지 않는다면, 해당 post-processor는 전혀 인스턴스화 되지 않을 것 입니다. 따라서, post-processor 를 lazy initialization하는 것은 무시되어 질 것입니다. 그리고 `<beans/>`요소의 `default-lazy-init`속성을 `true`로 설정 하더라도 `Bean(Factory)PostProcessor`는 열렬히 인스턴스화될 것입니다.
 
+#### Example: The Class Name Substitution `PropertySourcesPlaceholderConfigurer`
 
+**개발자는 표준 Java `Properties` 형식을 활용하여 별도의 파일의 Bean 정의로부터 property 값을 외부화하기 위해서 `PropertySourcesPlaceholderConfigurer`를 사용할 수 있다.** 이렇게 하는 것은 어플리케이션을 배포하려는 사람이 특정한 환경의 properties를  주요 XML 정의 파일 또는 Container를 위한 파일을 수정하는 위험성과 복잡성 없이 주문제작할 수 있다. (ex. database URL, passwords)
 
+다음의 XML 기반의 configuration metadata 부분(placeholder 값으로 정의된 Datasource)을 고려해보자.
 
+```xml
+<bean class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+	<property name="locations" value="classpath:com/something/jdbc.properties"/>
+</bean>
 
+<bean id="dataSource" destroy-method="close" class="org.apache.commons.dbcp.BasicDataSource">
+   <property name="driverClassName" value="${jdbc.driverClassName}"/>
+   <property name="url" value="${jdbc.url}"/>
+   <property name="username" value="${jdbc.username}"/>
+   <property name="password" value="${jdbc.password}"/>
+</bean>
+```
 
+이 예제는 외부 `Properties` file로 부터 설정된 properties를 보여준다. 런타임시에, `PropertySourcesPlaceholderConfigurer`는 Datasource의 몇가지의 properties를 교체한 metadata가 적용된다. 교체된 값은 placeholder 폼으로 명시되어 진다. 이러한 폼은 다음과 같다. `${property-name}`, 이러한 형태의 폼은 Ant, log4j, JSP EL 스타일을 따릅니다.
 
+표준 Java `Properties` 형식의 다른 파일로부터 온 실제 값은 다음과 같다.
 
+```
+jdbc.driverClassName=org.hsqldb.jdbcDriver
+jdbc.url=jdbc:hsqldb:hsql://production:9002
+jdbc.username=sa
+jdbc.password=root
+```
 
+그러므로, `${jdbc.username}` String은 런타임시에 'sa' 값으로 교체되어지고, properties 파일의 키와 일치하는 다른 placeholder values에도 동일하게 적용됩니다. `PropertySourcesPlaceholderConfigurer`는 Bean 정의의 대부분의 properties 와 속성에서 placeholder를 점검합니다. 게다가, 개발자는 placeholder를 prefix 와 suffix로 설정할 수 있습니다.
 
+`context` namespace가 Spring 2.5에서 소개되어 지면서, 개발자는 property placeholder를 특정(dedicated) 설정 요소를 사용해서 설정할 수 있습니다. 개발자는 `location` 속성에서 comma로써 구분된 리스트로서 하나 이상의 locations를 제공할 수 있습니다. 다음 예제를 참고해 보자.
 
+```xml
+<context:property-placeholder location="classpath:com/something/jdbc.properties"/>
+```
 
+`PropertySourcesPlaceholderConfigurer` 는 정의한 `Properties` 파일에서 properties를 찾을 뿐만 아니라, 기본적으로 특정한 properties files안에서 property를 찾지 못하면, Spring `Environment` properties 와 기본적인 자바 `System` properties를 점검한다.
 
+> `PropertySourcesPlaceholderConfigurer`를 사용하여 클래스 이름을 대체할 수 있습니다. 이는 런타임시 특정 클래스를 선택해야 할 때 유용합니다. 다음의 예는 어떻게 사용하는지에 대해서 보여준다.
+>
+> ```xml
+> <bean class="org.springframework.beans.factory.config.PropertySourcesPlaceholderConfigurer">
+> 	<property name="locations">
+>    	<value>classpath:com/something.strategy.properties</value>
+>    </property>
+>    <property name="properties">
+>    	<value>custom.strategy.class=com.something.DefaultStrategy</value>
+>    </property>
+> </bean>
+> 
+> <bean id="serviceStrategy" class="${custom.strategy.class}"/>
+> ```
+>
+> 클래스가 런타임시에 유효한 클래스를 확인할 수 없다면, Bean의 확인은 Bean이 생성되어질 때 실패합니다. 이러한 경우는   non-lazy-init Bean을 위한 `ApplicationContext`의 `preInstantiateSingletons()`단계 동안에 발생됩니다.
 
+#### Example: The `PropertyOverrideConfigurer`
 
+`PropertyOverrideConfigurer`(또 다른 Bean factory post-processor)는 `PropertySourcesPlaceholderConfigurer` 과 비슷합니다. 하지만 후자와는 다르게, 본래의 정의는 모든 Bean의 Properties에 대하여 기본적인 값 또는 값을 가지지 않습니다. 만약, 오버라이딩 한 `Properties` 파일이 특정 Bean property에 대한 항목이 없는 경우, 기본적인 context 정의가 사용됩니다.
 
+Bean의 정의는 override 되어지는 것을 인식하지 못하는 것을 주목해라! 그래서 오버라이드 설정이 사용되어지는 XML 기반의 정의는 명백하지 않습니다. 같은 Bean property에 대한 다른 값을 정의하는 다양한 PropertyOverrideConfigurer 인스턴스의 경우에, 오버라이드 메커니즘 때문에 마지막 값이 승리한다.
 
+Properties 파일 구성 행은 다음 형식을 따릅니다.
 
+```
+beanName.property=value
+```
+
+다음 리스트는 형식의 예를 보여줍니다.
+
+```
+dataSource.driverClassName=com.mysql.jdbc.Driver
+dataSource.url=jdbc:mysql:mydb
+```
+
+위의 예제 파일은 `driver`과 `url` properties를 가진 `dataSource`를 호출하는 Bean을 포함하는 Container 정의에 사용됩니다.
+
+복합적(Compound) property names 또한 지원되어진다. 오버라이드 되어지는 최종 property를 제외한 경로의 모든 구성요소가 null 이 아닌 한( 아마(presumably) 생성자들로부터 초기화 되어진다. ) 다음 예제에서, tom Bean의 fred property의 bob property의 bob propertydml sammy property는 스칼라 값 123으로 세트 되어진다.
+
+```
+tom.fred.bob.sammy=123
+```
+
+> 명시된 오버라이드 값은 항상 문자 그대로의 값이다. 그것들은 Bean 참조에 의해서 번역 되어지지 않는다. 이러한 규칙은 XML Bean 정의에서 본래의 값이 Bean reference를 명시할 때 적용된다.
+
+spring 2.5에서 소개된 `context` namespace를 통해, property 오버라이드를 별도의 configuration element로 설정할 수 있게 되었다. 다음 예제가 보여준다.
+
+```xml
+<context:property-override location="classpath:override.properties"/>
+```
+
+### 1.8.3 Customizing Instantiation Logic with a `FactoryBean`
+
+개발자는 팩토리인 객체를 위해서 `org.springframework.beans.factory.FactoryBean` 인터페이스를 구현할 수 있다.
+
+**`FactoryBean` 인터페이스는 Spring IoC Container 인스턴스화 로직에 연결하는 연결지점 입니다. 만약 장황한(verbose) XML과는 반대로 자바에서 잘 표현되는 복잡한 초기화 코드를 가지고 있다면, 개발자는 자신의 `FactoryBean`을 생성할 수 있고 클래스 내에서 복잡한 초기화 코드를 작성하고 그리고 Container에 사용자 `FactoryBean` 연결할 수 있다.**
+
+`FactoryBean` 인터페이스는 3가지의 메소드를 지원한다.
+
+- `Object getObject()` : 이 팩토리가 생성하는 객체의 인스턴스를 리턴해준다. 이 인스턴스는 공유되어질 수 있고, 이 팩토리가 Singleton을 리턴하는지 또는 Prototypes를 리턴하는지에 의존한다.
+- `boolean isSingleton()` :  `FactoryBean`이 Singleton을 리턴하면 `true`를 리턴하고 그렇지 않으면 `false`를 리턴한다.
+- `Class getObjectType()` : `getObject()` 메소드에 의해 리턴되어지는 객체 타입을 리턴하거나, 미리 타입이 알려지지 않앗다면 `null`을 리턴한다.
+
+`FactoryBean` 개념과 인터페이스는 Spring Framework의 많은 곳에서 사용되어지고 있다. `FactoryBean` 인터페이스의 50개 이상의 구현은 Spring 자체와 함께 제공(ship with)됩니다.
+
+**개발자가 실제 FactoryBean 인스턴스를 Bean 대신에 Container에게 요청할 때, &기호를 `ApplicationContext`의 `getBean()` 메소드가 호출될 때 머리맡에 붙여야(preface)한다.** 따라서 `myBean` 이 `id`인 주어진 `FactoryBean`에 대해, 컨테이너에서 `getBean("myBean")`을 호출하는 것은 `FactoryBean`에 의해 생산된 Bean이 리턴되고, 반면에 `getBean("&myBean")`을 호출하는 것은 `FactoryBean` 인스턴스 자체를 리턴한다.
 
 
 
