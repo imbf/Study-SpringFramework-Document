@@ -31,15 +31,229 @@
 
 > `<context:annotation-config/>` 는 오직 정의된 같은 applicationcontext 내의 Bean에서 annotation만 찾습니다. 즉, `DispatcherServlet`의 `WebApplicationConext`에 `<context:annotation-config/>`를 넣으면  서비스가 아닌 컨트롤러의 `@Autowired` Bean을 검사합니다. 자세한 정보는 DispatcherServlet을 참조하십시요.
 
+---
 
+## 1.9.1 @Required
 
+`@Required` annotation은 Bean Property의 setter methods에 적용됩니다. 다음 예제를 참고 해 봅시다.
 
+```java
+public class SimpleMovieLister{
+   private MovieFinder movieFinder;
+   
+   @Required
+   public void setMovieFinder(MovieFinder movieFinder){
+      this.movieFinder = movieFinder;
+   }
+   
+   // ...
+}
+```
 
+**이 annotation은 영향을 받는 Bean property를 configuration time에 Bean definition의 명확한 property value를 통해 또는 autowiring을 통해서 populated 함을 나타냅니다.** 이 Container는 영향을 받은 Bean의 property가 populated 되지 않으면 예외를 던집니다. 이러한 프로세스는 나중에(later on) 명백한 실패를 허용해, `NullPointerException` 인스턴스를 피합니다. Spring은 개발자가 Bean class 자체에 assertion 를 넣을 것을 권고한다. 다음과 같이 진행하는 것은 필수 reference 와 값들을 Container 외부에서 class를 사용할 때 조차도 적용됩니다..
 
+> `@Required` annotation은 공식적으로 Spirng Framework 5.1에서 필수 설정(또는 Bean property setter methods와 함께(along with) InitializingBean.afterPropertiesSet() 의 사용자 구현)에 생성자 주입을 사용하는 것을 찬성하여 폐지되었습니다.
 
+---
 
+## 1.9.2 Using `@Autowired`
 
+> JSR 330's `@Inject` 애노테이션은 스프링의 `@Autowired` 애노테이션을 대신에 사용되었다.
 
+개발자는 `@Autowired` 애노테이션은 생성자에 다음 예제에서 보여주는 것처럼 적용할 수 있다.
+
+```java
+public class MovieRecommender{
+   private final CustomerPreferenceDao customerPreferenceDao;
+   
+   @Autowired
+   public MovieRecommender(CustomerPreferenceDao customerPreferenceDao){
+      this.customerPreferenceDao = customerPreferenceDao;
+   }
+   
+   //...
+}
+```
+
+> **Spring Framework 4.3 부터, `@Autowired` annotation(생성자에 붙여진)은 target Bean이 시작하기 위해 오직 하나의 생성자로 구성되어져 있다면 `@Autowired`는 더이상 필요하지 않게 되었습니다.** 그러나 만약 여러개의 생성자가 이용가능 하다면, 최소한 Container에게 명령하기 위해서 `@Autowired`가 최소한 하나에는 붙여져 있어야 한다.
+
+**개발자는 `@Autowired` annotation을 전통적인 setter 메소드에 다음 예제와 같이 적용할 수 있다.**
+
+```java
+public class SimplemovieLister{
+   
+   private MovieFinder movieFinder;
+   
+   @Autowired
+   public void setMovieFinder(MovieFinder movieFinder){
+      this.movieFinder = movieFider;
+   }
+   
+   // ...
+}
+```
+
+**개발자는 `@Autowired` annotation을 임의의 이름을 가진 메소드와 여러개의 인자를 가진 메소드에 다음 예제에서 보여주는 것 처럼 적용할 수 있습니다.**
+
+```java
+public class MovieRecommender{
+   
+   private MovieCatalog movieCatalog;
+   
+   private CustomerPreferenceDao customerPreferenceDao;
+   
+   @Autowired
+   public void prepare(MovieCatalog movieCatalog, CustomerPreferenceDao customerPreferenceDao){
+      this.movieCatalog = movieCatalog;
+      this.customerPreferenceDao = customerPreferenceDao;
+   }
+   
+   //...
+}
+```
+
+**개발자는 `@Autowired`를 필드와, 심지어는 생성자와 함께 필드를 섞어서 다음 예제에서 보여주는 것처럼 적용할 수 있습니다.**
+
+```java
+public class MovieRecommender{
+   
+   private final CustomerPreferenceDao customerPreferenceDao;
+   
+   @Autowired
+   private MovieCatalog movieCatalog;
+   
+   @Autowired
+   public MovieRecommender(CustomerPreferenceDao customerPreferenceDao){
+      this.customerPreferenceDao = customerPreferenceDao;
+   }
+   
+   //...
+}
+```
+
+> target components(ex. `MovieCatalog` or `CustomerPreferenceDao`)가 `@Autowired`-annotaed 주입 points를 위해 사용하는 type에 의해서 일관되게 일관되게 선언이 되어있는지 확인해야한다. 그렇지 않으면, 주입은 "no type match found" 에러 때문에 런타임시에 실패할 것이다.
+>
+> classpath scanning을 통해서 찾은 XML에 의해서 정의된 Bean 또는 Components class를 위해, Container는 보통 구체적인 타입을 미리(up front) 알고 있습니다. 그러나, `@Bean` 팩토리 메소드의 경우, 개발자는 선언된 리턴타입이 충분히  나타나는지 확인해야 합니다. 여러 인터페이스 인터페이스를 구현하는 components를 위해서 또는 잠재적으로 그들의 구현 타입에 의해서 언급되어지는 components를 위해서, factory method에 가장 명시적인 리턴 타입을 선언할 것을 고려해야한다. (최소한 Bean을 참조하는 주입 지점에 의해 요구되어지는 정도로 명시해야한다.)
+
+**개발자는`ApplicationContext`에 `@Autowired` 을 해당 타입의 배열을 예상하는 필드 또는 메소드에 추가함으로써 특정 타입의 모든 Bean을 Spring이 제공하도록 지시할 수 있다.**
+
+다음 예를 참고해 보자.
+
+```java
+public class MovieRecommender{
+   @Autowired
+   private MovieCatalog[] movieCatalogs;
+   
+   // ...
+}
+```
+
+다음 예제와 같이 타입이 정해진 컬렉션에 똑같이 적용할 수 있다.
+
+```java
+public class MovieRecommender {
+   
+   private Set<MovieCatalog> movieCatalogs;
+   
+   @Autowired
+   public void setMovieCatalogs(Set<MovieCatalog> movieCatalogs){
+      this.movieCatalogs = movieCatalogs;
+   }
+   
+   // ...
+}
+```
+
+> 개발자가 리스트나 배열 안에서 특정한 순서대로 정리되어지길 원한다면, target Bean은 `org.springframework.core.Ordered` 인터페이스를 구현할 수 있거나 또는 `@Order` 또는 표준 `@Priority` 애노테이션을 사용할 수 있습니다. 그렇지 않으면, 그들의 순서는 Container의 target Bean 정의에 대응하는 등록순서를 따를것이다.
+>
+> 개발자는 개별 Bean 정의에 대해 target class 레벨 및 @Bean 메소드에서 `@Order` 애노테이션을 선언할 수 있다.(동일한 Bean 클래스를 사용하는 여러개의 정의의 경우) `@Order` 값은 의존성 지점에서 우선순위에 영향을 미칠것이다. 그러나 `@Order` 값이 singleton 시작 순서에는 영향을 미치지 않는다는 것을 알아야 한다. singleton startup order 는 의존성 관계와 `@DependsOn` 선언에 의해서 결정되어지는 직교 관계이다.
+>
+> 표준 `javax.annotation.Priority` 애노테이션은 메소드에서 선언 되어질 수 없기 때문에  `@Bean` 계층에서 이용이 불가능하다. 이러한 의미는 각 타입을 위한 단일 Bean에서 `@Order` 값과 `@Primary` 의 조화를 통해 모델링 되어질 수 있습니다.
+
+모든 타입의 `Map` 인스턴스는 예상되는 key값이 String인 경우 autowired 되어질 수 있습니다. map value는 예측되는 타입의 모든 Bean을 포함하고, key는 대응되는 Bean name을 포함한다. 다음 예제에서 보여준다.
+
+```java
+public class movieRecommender{
+   
+   private Map<String, MovieCatalog> movieCatalogs;
+   
+   @Autowired
+   public void setMovieCatalogs(Map<String, MovieCatalog> movieCatalogs) {
+      this.movieCatalogs = movieCatalogs;
+   }
+   
+   // ...
+}
+```
+
+**기본적으로, 주어진 주입 포인트에 대하여 어떠한 matching 후보자 Bean도 이용할 수가 없을 때 autowiring은 실패한다. 선언된 배열, 컬렉션, 맵 경우에, 최소한 하나의 matching 요소가 예상 되어야 한다.**
+
+기본 동작은 annotated 메소드 와 필드를 필수 종속성을 나타내는 것으로 처리하는 것입니다. 개발자는 이러한 동작을 다음예 에서 설명되어지는 것처럼 바꿀 수 있습니다. 개발자는 프레임워크가 만족하지 못한 주입 포인트를 필요하지 않다고 표시함으로써 넘어가게 할 수 있습니다.(`@Autowired` 내의 `required`속성을 `false`로 세팅함으로써)
+
+```java
+public class simpleMovieLister {
+   
+   private MovieFinder movieFinder;
+   
+   @Autowired(required = false)
+   public void setMovieFinder(MovieFinder movieFinder){
+      this.movieFinder = movieFinder;
+   }
+   
+   // ...
+   
+}
+```
+
+**필수가 아닌 메소드들은 만약 의존성이 만족되지 못하면(여러개의 인자를 가지고 있는경우 이것의 하나라도) 전부다 호출하지 못하도록 한다.  필수가 아닌 필드들은 이러한 경우에 전혀 채워지지(populate) 않음으로, 기본값이 올바른 장소에 남아있게 됩니다.**
+
+ **`@Autowired` 의  `required` 속성이 잠재적으로 여러개의 생성자를 다룰 Spring 생성자 resolution 알고리즘 때문에 다소 다른 의미를 가지기 때문에 주입된 생성자와 factory method 인자는 특별한 경우이다**. 생성자와 팩토리 메소드 인자들은 기본적으로 필수적이지만 일치하는 Bean을 사용할 수 없는 경우 빈 인스턴스로 확인되는 다중 요소 삽입 지점(배열, 콜렉션, 맵)과 같은 단일 생성자 시나리오에서 몇 가지 특수 규칙이 있습니다. **생성자와 팩토리 메소드 인자들은 모든 의존성이 유일한 다수의 인자 생성자에 선언되어지는 흔한 구현 패턴을 허용합니다.** - 예로들어, `@Autowired` 애노테이션 없이 단일 public 생성자로써 선언되는 경우이다.
+
+> 주어진 Bean class에서 오직 한개의 생성자가 `@Autowired`를 `required` 속성을 `true`로써 선언한다. Spring Bean으로써 사용되어질 때 생성자가 autowire임을 나타냅니다. 게다가 `required` 속성이 `true`로 세팅 되어져 있다면, 오직 하나의 생성자가 @Autowired 함께 annotated 될 수 있습니다. 필수적이지 않은 다중 생성자가 annotation을 선언한다면 , 그들은 autowiring을 위한 후보자로써 고려되어질 것이다. Spring Container에서 Bean을 매칭함으로써 의존성을 만족시키는 생성자가 선택되어질것이다. 만약 어떠한 후보자도 선택되어지지 않는다면, 상위/기본 생성자(만약 존재한다면)가 사용되어질 것이다. 만약 클래스가 오직 하나의 생성자를 시작하기위해 선언한다면, 이것은 annotation이 붙지 않아도 항상 사용되어질 것다. annotation이 달린 생성자는 public일 필요가 없습니다.
+>
+> **`@Autowired`의 `required`속성은 setter 메소드의 더이상 사용되지 않는 `@Required` 애노테이션 보다 더 권장됩니다.** `required` 속성을 `false`로 설정하는 것은 property가 autowiring 목적을 위해 필요하지 않다는것을 의미하고, autowired를 할 수 없는 경우 property는 무시됩니다. 다른 말로, `@Required` 는 Container에 의해 지원되는 모든 방법에 의해서 property를 설정한다는 점에서 강력합니다. 만약 어떠한 값도 설정되어 있지 않다면, 그에 알맞는 에러가 발생되어질 것이다.
+
+대안적으로, 개발자는 특정 의존성의 필요하지 않는 특성을 Java 8의 `java.util.Optional` 을 통해서 표현할 수 있다. 다음 예제에서 보여준다.
+
+```java
+public class SimpleMovieLister{
+   
+   @Autowired
+   public void setMovieFinder(Optional<MovieFinder> movieFinder){
+      // ...
+   }
+}
+```
+
+Spring Framework 5.0 부터, 개발자는 `@Nullable` 애노테이션 또는 leverage Kotlin builtin null-safety support를 사용할 수 있습니다. (패키지의 모든 종류에서) 
+
+```java
+public class SimplemovieLister{
+   
+   @Autowired
+   public void setMovieFinder(@Nullable MovieFinder movieFinder){
+      // ...
+   }
+}
+```
+
+개발자는 의존성을 해결하기 위해서 잘 알려진 인터페이스를 위해 `@Autowired`를 사용할 수 있습니다. (ex. `BeanFactory`, `ApplicationContext`, `Environment`, `ResourceLoader`, `ApplicationEventPublisher`, `MessageSource`) 이러한 인터페이스 와 확장된 인터페이스(`ConfigurableApplicationContext` or `ResourcePatternResolver`)들은 어느 특별한 설정이 필요없이 자동적으로 의존성이 해결됩니다. 다음 예제는 `ApplicationContext` 객체를 autowire한 예제입니다.
+
+```java
+public class MovieRecommender{
+   
+   @Autowired
+   private ApplicationContext context;
+   
+   public MovieRecommender(){
+      
+   }
+   
+   // ...
+}
+```
+
+`@Autowired`, `@Inject`, `@Value`, `@Resource` 애노테이션은 Spring `BeanPostProcessor` 구현에 의해서 다루어진다. 개발자는 이러한 애노테이션을 사용자 정의 `BeanPostProcessor` 또는 `BeanFactoryPostProcessor` 타입 내에 적용할 수 없음을 의미한다. 이러한 타입은 XML 또는 Spring `@Bean` 메소드를 사용함으로써 명백히 wired up 시켜야 한다.
 
 
 
