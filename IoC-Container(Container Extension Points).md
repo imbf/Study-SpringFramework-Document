@@ -18,7 +18,7 @@
 
 `org.springframework.beans.factory.config.BeanPostProcessor` 인터페이스는 정확히 2개의 callback 메소드로 이루어져 있다. **이러한 클래스가 Container에 post-processor로써 등록이 되어져 있을 때, Container에 의해서 생성되어지는 각 Bean 인스턴스에 대하여, post-processor는 Container 초기화 메소드(ex. `InitializingBean.afterPropertiesSet()`, `init` 메소드로 선언되어진 메소드 등) 가 호출되기 이전에, 다른 Bean 초기화 콜백이 호출된 이후에 콜백을 얻는다.** post-processor는 콜백을 완전히 무시하는 것을 포함하여 Bean 인스턴스에 모든 조치를 취할 수 있습니다. Bean post-processor는 일반적으로 콜백 인터페이스를 확인하거나, 프록시로 Bean을 감쌀 수 있습니다. 몇가지의 Spring AOP infrastructure 클래스들은 Bean post-processor로써 proxy-wrapping logic을 제공하기 위해서 구현되어 있다.
 
-`ApplicationContext`는 자동적으로 `BeanPostProcessor` 인터페이스를 구현한 configuration data에 의해 정의된  모든 Bean들을 탐색합니다. `ApplicationContex` 는 이러한 Bean들을 생성되지마자 나중에 호출될 수 있도록 post-processor로써 등록합니다. Bean post-processor는 다른 Bean과 마찬가지로 같은 방식으로 Container에 배치합니다.
+`ApplicationContext`는 자동적으로 `BeanPostProcessor` 인터페이스를 구현한 configuration data에 의해 정의된  모든 Bean들을 탐색합니다. `ApplicationContext` 는 이러한 Bean들을 생성되지마자 나중에 호출될 수 있도록 post-processor로써 등록합니다. Bean post-processor는 다른 Bean과 마찬가지로 같은 방식으로 Container에 배치합니다.
 
 **configuration 클래스에 `@Bean` 팩토리 메소드를 사용해서 BeanPostProcessor를 선언할 때, 리턴 타입은 구현 클래스 자체이거나 또는 최소 `org.springframework.beans.factory.config.BeanPostProcessor`인터페이스 이어야 합니다.** 그리고 명확하게 해당 Bean의 post-processor의 특징을 나타냅니다. 그렇지 않으면(otherwise) `ApplicationContext`는 완전하게 이것이 생성되기 전에 자동으로 BeanPostProcessor를 타입에 의해서 찾지 못합니다. `BeanPostProcessor`는 context에서 다른 Bean의 초기화에 적용하기 위해 일찍 인스턴스가 되어야 하기 때문에, 이른 타입 검색은 매우 중요합니다.
 
@@ -40,7 +40,7 @@
 
 #### Example: Hello World, `BeanPostProcessor`-style
 
-이번 첫 번째 예지는 기본적인 사용을 설명합니다. 이 예제는 Container에 의해서 각 Bean이 생성될 때 `toString( )` 메소드를 호출하하고 System 콘솔의 String 결과 값을 print하는 사용자 `BeanPostProcessor` 구현을 보여줍니다.
+이번 첫 번째 예제는 기본적인 사용을 설명합니다. 이 예제는 Container에 의해서 각 Bean이 생성될 때 `toString()` 메소드를 호출하고 System 콘솔의 String 결과 값을 print하는 사용자 `BeanPostProcessor` 구현을 보여줍니다.
 
 사용자 `BeanPostProcessor` 구현한 클래스의 definition을 보여줍니다.
 
@@ -97,7 +97,7 @@ public final class Boot{
    
    public static void main(final String[] args) throws Exception{
       ApplicationContext ctx = new ClassPathXmlApplicationContext("scripting/beans.xml");
-      Messenger messenger ctx.getBean("messenger".Messenger.class);
+      Messenger messenger = ctx.getBean("messenger".Messenger.class);
       System.out.println(messenger);
    }
 }
@@ -116,7 +116,7 @@ org.springframework.scripting.groovy.GroovyMessenger@272961
 
 ### 1.8.2 Customizing Configuration Metadata with a `BeanFactoryPostProcessor`
 
-다음으로 우리가 주목해야 할 확장 포인트는 `org.springframework.beans.factory.config.BeanFactoryPostProcessor` 입니다. 이 인터페이스의 의미는 `BeanPostProcessor`와 비슷하다. `BeanFactoryPostProcessor`의 가장 중요한 차이는 Bean configuration metadata에서 작동합니다. 즉, Spring IoC Container는 `BeanFactoryPostProcessor`가 configuration metadata를 읽도록 하고, 잠재적으로 `BeanFactoryPostProcessor` 인스턴스 이외의 다른 Bean을 인스턴스화하기 전에 이를 변경할 수 있습니다.
+다음으로 우리가 주목해야 할 확장 포인트는 `org.springframework.beans.factory.config.BeanFactoryPostProcessor` 입니다. 이 인터페이스의 의미는 `BeanPostProcessor`와 비슷하다. `BeanFactoryPostProcessor`의 가장 중요한 차이는 Bean configuration metadata에서 작동합니다. **즉, Spring IoC Container는 `BeanFactoryPostProcessor`가 configuration metadata를 읽도록 하고, 잠재적으로 `BeanFactoryPostProcessor` 인스턴스 이외의 다른 Bean을 인스턴스화하기 전에 이를 변경할 수 있습니다.**
 
 개발자는 여러개의 `BeanFactoryPostProcessor` 인스턴스를 설정할 수 있고, `Order` 프로퍼티를 설정함으로써 `BeanFactoryPostProcessor` 인스턴스의 실행 순서를 제어할 수 있습니다. 그러나 `BeanFactoryPostProcessor`가 `Ordered` 인터페이스를 구현해야지만 이러한 proeprty를 세팅할 수 있습니다. 만약 개발자가 자신의 `BeanFactoryPostProcessor`을 작성한다면, `Ordered` 인터페이스를 구현할 것을 고려하기를 추천한다. 
 
@@ -210,7 +210,7 @@ dataSource.url=jdbc:mysql:mydb
 
 위의 예제 파일은 `driver`과 `url` properties를 가진 `dataSource`를 호출하는 Bean을 포함하는 Container 정의에 사용됩니다.
 
-복합적(Compound) property names 또한 지원되어진다. 오버라이드 되어지는 최종 property를 제외한 경로의 모든 구성요소가 null 이 아닌 한( 아마(presumably) 생성자들로부터 초기화 되어진다. ) 다음 예제에서, tom Bean의 fred property의 bob property의 bob propertydml sammy property는 스칼라 값 123으로 세트 되어진다.
+복합적(Compound) property names 또한 지원되어진다. 오버라이드 되어지는 최종 property를 제외한 경로의 모든 구성요소가 null 이 아닌 한( 아마(presumably) 생성자들로부터 초기화 되어진다. ) 다음 예제에서, tom Bean의 fred property의 bob property의 bob property의 sammy property는 스칼라 값 123으로 세트 되어진다.
 
 ```
 tom.fred.bob.sammy=123
@@ -234,7 +234,7 @@ spring 2.5에서 소개된 `context` namespace를 통해, property 오버라이�
 
 - `Object getObject()` : 이 팩토리가 생성하는 객체의 인스턴스를 리턴해준다. 이 인스턴스는 공유되어질 수 있고, 이 팩토리가 Singleton을 리턴하는지 또는 Prototypes를 리턴하는지에 의존한다.
 - `boolean isSingleton()` :  `FactoryBean`이 Singleton을 리턴하면 `true`를 리턴하고 그렇지 않으면 `false`를 리턴한다.
-- `Class getObjectType()` : `getObject()` 메소드에 의해 리턴되어지는 객체 타입을 리턴하거나, 미리 타입이 알려지지 않앗다면 `null`을 리턴한다.
+- `Class getObjectType()` : `getObject()` 메소드에 의해 리턴되어지는 객체 타입을 리턴하거나, 미리 타입이 알려지지 않았다면 `null`을 리턴한다.
 
 `FactoryBean` 개념과 인터페이스는 Spring Framework의 많은 곳에서 사용되어지고 있다. `FactoryBean` 인터페이스의 50개 이상의 구현은 Spring 자체와 함께 제공(ship with)됩니다.
 
