@@ -688,15 +688,222 @@ private List<Store<Integer>> s;
 
 ### 1.9.6 Using `CustomAutowireConfigurer`
 
+`CustomAutowireConfigurer`는 Spring의 `@Qualifier` 애노테이션을 붙이지 않았음에도 개발자가 사용자 정의 qualifier 애노테이션 타입을 등록하도록 하는 `BeanFactoryPostProcessor` 입니다. 다음의 예제는 어떻게 `CustomAutowireConfigurer`를 사용하는지에 대한 예제를 보여줍니다.
 
+```xml
+<bean id="customAutowireConfigurer" class="org.springframework.beans.factory.annotation.CustomAutowireConfigurer">
+	<property name="customQualifierTypes">
+   	<set>
+      	<value>example.CustomQualifier</value>
+      </set>
+   </property>
+</bean>
+```
 
+`AutowireCandidateResolver`는 autowire 후보를 다음 항목에 의해서 결정합니다.
 
+- 각 Bean 정의의 `autowire-candidate` 값
+-  `<beans/>` 요소에서 사용 가능한 모든 `default-autowire-candidates` 패턴
+- `@Qualifier` 애노테이션 및 `CustomAutowireConfigurer`에 등록되어진 사용자 정의 애노테이션의 현황
 
+여러개의  Bean들이 autowire candidate로써 자격을 받을 때, primary(최상위) 결정은 다음을 따른다 : 만약 여러 후보자들 사이에서 정확히 하나의 Bean 정의가 primary 속성을 true로 가지고 있다면 이것이 선택되어질 것이다.
 
+---
 
+### 1.9.7 Injection with `@Resource`
 
+**Spring은 JSR-250 `@Reousrce` 애노테이션을 <u>필드 또는 Bean property setter 메소드</u>에 사용함으로써 의존성 주입을 지원해준다.** 이러한 것은 Java Enterprise Edition의 일반적인 패턴이다. 예로들어, JSF 관리 Bean 및 JAX-WS 엔드포인트에서, **Spring은 Spring이 관리하는 객체에서 또한 이러한 패턴을 지원한다.**
 
+`@Resource` 는 name속성을 가진다. 기본적으로, Spring은 name속성의 값을 주입 될 Bean 이름으로써 해석한다. 다시 말해, name 속성은 **by-name 의미론**을 따른다. 다음 예제에 설명되어 있으니 참고하자.
 
+```java
+public class SimpleMovieLister{
+   
+   private MovieFinder movieFinder;
+   
+   @Resource(name="myMovieFinder") // (1)
+   public void setMovieFinder(MovieFinder movieFinder){
+      this.movieFinder = movieFinder;
+   }
+}
+```
+
+만약 어떠한 name도 명확하게 명시되어 있지 않다면, **기본 name은 필드 name 또는 setter 메소드로부터 올것이다.** 필드의 경우에, field name을 사용합니다. setter 메소드의 경우에, Bean property name을 사용합니다. 
+
+다음의 예제는 `movieFinder` 라는 이름을 가진 Bean을 해당 setter method에 의존성을 주입하는 예를 보여준다.
+
+```java
+public class SimpleMovieLister{
+   
+   private MovieFinder movieFinder;
+   
+   @Resource
+   public void setMovieFinder(MovieFinder movieFinder){
+      this.movieFinder = movieFinder;
+   }
+}
+```
+
+> annotation과 함께 제공된 name은 `CommonAnnotationBeanPostProcessor`가 인식하는 `ApplicationContext`에 의해 Bean name으로 해석되어진다. 만약 Spring의 `SimpleJndiBeanFactory`를 설정한다면 JNDI를 통해서 name이 해석되어질 것이다. 그러나, **기본 동작에 의존하고 Spring의 JNDI 조회 기능을 사용하여 간접 수준을 유지하는 것이 권고됩니다.**
+
+명시적인 이름을 지정하지않고 `@Resource` 를 사용하는 독점적인 경우 `@Autowired`와 비슷하다. `@Resource`는 특정 명명된 Bean 대신 primary 타입 일치를 찾고, 잘 알려진 해석 가능한 의존성(`BeanFactory`, `ApplicationContext`, `ResourceLoader`, `ApplicationEventPublisher`, `MessageSource` 인터페이스) 으로써 해석(resolve)한다.
+
+**따라서 다음 예제에서 `customerPreferenceDao` 필드는 먼저 "customerPreferenceDao" 라는 Bean을 찾은 다음 `CustomerPreferenceDao` 유형의 primary 유형 일치로 대체됩니다.**
+
+```java
+public class MovieRecommender{
+   
+   @Resource
+   private CustomerpreferenceDao customerPreferenceDao;
+   
+   @Resource
+   private ApplicationContext context; // (1)
+   
+   public MovieRecommender(){
+      // ...
+   }
+}
+```
+
+1. `context` 필드는 알려진 해결가능한 의존성 타입인 `ApplicationContext`에 기초하여 의존성 주입된다.
+
+---
+
+### 1.9.8 Using `@Value`
+
+**`@Value` 는 일반적으로 외부화된 properties를 주입하기 위해 사용되어진다.**
+
+```java
+@Component
+public class MovieRecommender {
+   private final String catalog;
+   
+   public MovieRecommender(@Value("${catalog.name}") String catalog){
+      this.catalog = catalog;
+   }
+}
+```
+
+다음은 configuration이다.
+
+```java
+@Configuration
+@PropertySource("classpath:application.properties")
+public class AppConfig {
+   
+}
+```
+
+Application.properties 파일은 다음과 같다.
+
+```java
+catalog.name=MovieCatalog
+```
+
+이러한 경우에, `catalog` 인자와 필드는 `MovieCatalog` 값과 동일해 질 것이다.
+
+기본적으로 관대한 내부 값 resolver는 Spring으로부터 제공되어진다. property 값을 분석하려고 시도할 것이고, 분석할 수 없는 경우, property name(예 ${catalog.name})이 값으로써 주입되어 질 것이다. 만약 존재하지 않는 값에 대해서 엄격한 제어를 유지하고 싶다면, `PropertySourcesPlaceholderConfigurer` Bean을 다음 예제에서 보여주는 것처럼 선언해야한다.
+
+```java
+@Configuration
+public class AppConfig {
+   
+   @Bean
+   public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer(){
+      return new PropertySourcesPlaceholderConfigurer();
+   }
+}
+```
+
+> **JavaConfig를 사용해서 `PropertySourcesPlaceholderconfigurer`를 설정할 때, `@Bean` 메소드는 틀림없이 `static`이어야 한다.**
+
+만약 ${} placeholder을 분석(확인)할 수 없는 경우 위와 같은 configuration을 사용하는 것은 Spring 초기화 에러를 발생시킵니다. **placeholder를 사용자 정의 하기 위해서 `setPlaceholderPrefix`, `setPlaceholderSuffix`, `setValueSeparator`와 같은 메소드들을 사용할 수 있습니다.**
+
+> Spring Boot는 `application.properties` 와 `application.yml` 파일로부터 properties를 얻을 수 있는 `PropertySourcesPlaceholderConfigurer` Bean을 기본적으로 설정한다.
+
+Spring에서 제공해주는 내장 converter 지원을 통해 간단한 타입 변환을 자동으로 처리할 수 있습니다. 여러개의 콤마로 구분된 값들은 추가적인 노력 없이 String 배열로 자동 변환될 수 있습니다.
+
+다음과 같이 기본값을 제공할 수 있습니다.
+
+```java
+@Component
+public class MovieRecommender{
+	
+   private final String catalog;
+   
+   public MovieRecommender(@Value("${catalog.name:defaultCatalog}") String catalog){
+      this.catalog = catalog;
+   }
+}
+```
+
+**Spring의 `BeanPostProcessor`는 뒤에서 `ConversionService`를 사용하여 @Value의 문자열 값을 target 타입으로 변환하는 프로세스를 처리합니다.** 만약 사용자 정의 타입을 위해서 변환 지원을 받고 싶은 경우, 개발자는 자신의 `ConversionService` Bean 인스턴스를 제공할 수 있습니다. 다음 예제에서 보여줍니다.
+
+```java
+@Configuration
+public class AppConfig{
+   
+   @Bean
+   public ConversionService conversionservice(){
+      DefaultFormattingConversionService conversionService = new DefaultFormattingConversionService();
+      conversionService.addConverter(new MyCustomerConverter());
+      return conversionService;
+   }
+}
+```
+
+`@Valve`에 SpEL 표현식이 포함될 때, 다음 예제에서 보여주듯 런타임 시 값이 동적으로 계산됩니다.
+
+```java
+@Component
+public class MovieRecommender {
+   
+   private final String catalog;
+   
+   public MovieRecommender(@Value("#{systemProperties['user.catalog'] + 'Catalog'}") String catalog){
+      this.catalog = catalog;
+   }
+}
+```
+
+SpEL은 더 복잡한 데이터 구조를 사용할 수 있게 한다.
+
+```java
+@Component
+public class MovieRecommender {
+   
+   private final Map<String, Integer> countOfMoviesPerCatalog;
+   
+   public MovieRecommender(@Value("${{'Thriller':100, 'Comedy': 300}}") Map<String, Integer> countOfMoviesPerCatalog){
+      this.countOfMoviesPerCatalog = countOfMoviesPerCatalog;
+   }
+}
+```
+
+---
+
+### 1.9.9 Using `@PostConstruct` and `@PreDestory`
+
+`CommonAnnotationBeanPostProcessor`는 `@Resource` 애노테이션을 인지할 뿐만아니라 JSR-250 lifecycle 애노테이션(`javax.annotation.PostConstruct` 와 `javax.annotation.PreDestory`) 또한 인지합니다. 스프링 2.5 에서 도입된, 이러한 주석을 위한 지원은 lifecycle 콜백 매커니즘(<u>initialization callback and destruction callbacks</u>)의 대안을 제공한다. **`CommonAnnotationBeanPostProcessor`가 Spring `ApplicationContext` 에 등록된 경우, 이러한 애노테이션중 하나를 전달하는 메소드는 해당 Spring 라이프사이클 인터페이스 메소드 또는 명확히 선언된 callback 메소드와 같은 라이프 사이클의 동일한 시점에서 호출됩니다.** 다음의 예제에서, cache는 초기화시 미리 populated 되어지고 소멸시 지워집니다.
+
+```java
+public class CachingMovieLister{
+   
+   @PostConstruct
+   public void populateMovieCache(){
+      // 초기화 시 movie cache를 populate한다.
+   }
+   
+   @PreDestory
+   public void clearMovieCache(){
+      // 소멸 시 movie cache를 지웁니다.
+   }
+}
+```
+
+다양한 lifecycle 매커니즘들을 결합한 결과에 대한 구체적인 정보는, Combining Lifecycle 과 Mechanisms를 보아라.
+
+> `@Resource`, `@PostConstruct`, `@PreDestroy` 애노테이션과 같은 타입들은 JDK 6 부터 8 사이의 자바 표준 라이브러리의 부분이다. 그러나, 전체 `javax.annotation` 패키지는 JDK 9의 자바 핵심 모듈로부터 분리되었고 결국에는 JDK 11에서 제거되었다. 만약 필요하다면, 다른 라이브러리와 같이 어플리케이션의 classpath에 간단히 추가하기 위해 `javax.annotation-api` 아티팩트를 Maven Central을 통해 가져와야한다. 
 
 
 
