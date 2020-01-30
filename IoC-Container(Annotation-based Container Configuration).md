@@ -2,7 +2,7 @@
 
 > #### Spring 설정에 XML 보다 annotation이 더 좋나?
 >
-> annotation-based configuration 의 소개에서는 XML 보다 Annotation 기반의 configuration이 더 좋느냐 하는 질물을 일으켰습니다. 우리는 "때에 따라 다르지라고" 짧게 대답할 수 있습니다. 좀 더 길게 답하자면 각각의 접근법은 장점과 단점을 보유하고 있습니다. 보통, 어떠한 전략이 더 적합한지 결정하는 것은 개발자에게 달려(be up to)있습니다. **개발자가 정의하는 방식에 따라서, annotation들은 선언에 많은 수의 context를 제공하며 짧고 간결한 설정을 제공합니다.** **반면에 XML은 소스코드를 조작하거나 다시 컴파일 할 필요없이 components 간에 연결짓는데 더 훌륭합니다.** <u>일부 개발자들은 소스에 가까운 wiring을 선호하는 반면에 다른 사람들은 주석이 달린 클래스가 더이상 POJO가 아니며, 구성이 분산되어 제어하기 더 어렵다고 주장합니다.</u>
+> annotation-based configuration 의 소개에서는 XML 보다 Annotation 기반의 configuration이 더 좋느냐 하는 질물을 유발하였습니다. 우리는 "때에 따라 다르지"라고 짧게 대답할 수 있습니다. 좀 더 길게 답하자면 각각의 접근법은 장점과 단점을 보유하고 있습니다. 보통, 어떠한 전략이 더 적합한지 결정하는 것은 개발자에게 달려(be up to)있습니다. **개발자가 정의하는 방식에 따라서, annotation들은 선언에 많은 수의 context를 제공하며 짧고 간결한 설정을 제공합니다.** **반면에 XML은 소스코드를 조작하거나 다시 컴파일 할 필요없이 components 간에 연결짓는데 더 훌륭합니다.** <u>일부 개발자들은 소스에 가까운 wiring을 선호하는 반면에 다른 사람들은 주석이 달린 클래스가 더이상 POJO가 아니며, 구성이 분산되어 제어하기 더 어렵다고 주장합니다.</u>
 >
 > 어느 선택을 하던간, Spring은 두가지의 스타일과 심지어는 같이 섞어논 스타일까지도 수용할(accommodate) 수 있습니다. Spring의 JavaConfig option 을 통해서 지적할만한 가치가 있습니다. Spring은 annotations이 비침투 방법으로 target 요소 소스코드를 건드리지 않고 tooling 측면에서 사용되어질 수 있도록 한다. 모든 설정 스타일은 Spring Tool Suite로부터 지원되어진다.
 
@@ -10,7 +10,7 @@
 
 > **Annotation injection은 XML injection 이전에 수행되어진다. 그러므로, XML configuration은 양쪽 접근을 통해 wired 된 properties에 대한 annotation을 오버라이드 합니다.**
 
-언제나 그렇듯이, 개별 Bean 정의로 Annotation을 등록할 수 있지만, 다음 태그를 포함하여 암시적으로 등록 할 수도 있습니다.(`context` namespace 포함에 주목해야 한다.)
+**언제나 그렇듯이, 개별 Bean 정의로 Annotation을 등록할 수 있지만, 다음 태그를 포함하여 암시적으로 등록 할 수도 있습니다.(`context` namespace 포함에 주목해야 한다.)**
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -33,7 +33,7 @@
 
 ---
 
-## 1.9.1 @Required
+### 1.9.1 @Required
 
 `@Required` annotation은 Bean Property의 setter methods에 적용됩니다. 다음 예제를 참고 해 봅시다.
 
@@ -50,13 +50,13 @@ public class SimpleMovieLister{
 }
 ```
 
-**이 annotation은 영향을 받는 Bean property를 configuration time에 Bean definition의 명확한 property value를 통해 또는 autowiring을 통해서 populated 함을 나타냅니다.** 이 Container는 영향을 받은 Bean의 property가 populated 되지 않으면 예외를 던집니다. 이러한 프로세스는 나중에(later on) 명백한 실패를 허용해, `NullPointerException` 인스턴스를 피합니다. Spring은 개발자가 Bean class 자체에 assertion 를 넣을 것을 권고한다. 다음과 같이 진행하는 것은 필수 reference 와 값들을 Container 외부에서 class를 사용할 때 조차도 적용됩니다..
+**이 annotation은 영향을 받는 Bean property를 configuration time에서 Bean definition의 명확한 property value를 통해 또는 autowiring을 통해서 populated 함을 나타냅니다.** 이 Container는 영향을 받은 Bean의 property가 populated 되지 않으면 예외를 던집니다. 이러한 프로세스는 나중에(later on) 명백한 실패를 허용해, `NullPointerException` 인스턴스를 피합니다. Spring은 개발자가 Bean class 자체에 assertion 를 넣을 것을 권고한다. 다음과 같이 진행하는 것은 필수 reference 와 값들을 Container 외부에서 class를 사용할 때 조차도 적용됩니다..
 
 > `@Required` annotation은 공식적으로 Spirng Framework 5.1에서 필수 설정(또는 Bean property setter methods와 함께(along with) InitializingBean.afterPropertiesSet() 의 사용자 구현)에 생성자 주입을 사용하는 것을 찬성하여 폐지되었습니다.
 
 ---
 
-## 1.9.2 Using `@Autowired`
+### 1.9.2 Using `@Autowired`
 
 > JSR 330's `@Inject` 애노테이션은 스프링의 `@Autowired` 애노테이션을 대신에 사용되었다.
 
@@ -131,9 +131,9 @@ public class MovieRecommender{
 }
 ```
 
-> target components(ex. `MovieCatalog` or `CustomerPreferenceDao`)가 `@Autowired`-annotaed 주입 points를 위해 사용하는 type에 의해서 일관되게 일관되게 선언이 되어있는지 확인해야한다. 그렇지 않으면, 주입은 "no type match found" 에러 때문에 런타임시에 실패할 것이다.
+> target components(ex. `MovieCatalog` or `CustomerPreferenceDao`)가 `@Autowired`-annotaed 주입 지점을 위해 사용하는 type에 의해서 일관되게 일관되게 선언이 되어있는지 확인해야한다. 그렇지 않으면, 주입은 "no type match found" 에러 때문에 런타임시에 실패할 것이다.
 >
-> classpath scanning을 통해서 찾은 XML에 의해서 정의된 Bean 또는 Components class를 위해, Container는 보통 구체적인 타입을 미리(up front) 알고 있습니다. 그러나, `@Bean` 팩토리 메소드의 경우, 개발자는 선언된 리턴타입이 충분히  나타나는지 확인해야 합니다. 여러 인터페이스 인터페이스를 구현하는 components를 위해서 또는 잠재적으로 그들의 구현 타입에 의해서 언급되어지는 components를 위해서, factory method에 가장 명시적인 리턴 타입을 선언할 것을 고려해야한다. (최소한 Bean을 참조하는 주입 지점에 의해 요구되어지는 정도로 명시해야한다.)
+> classpath scanning을 통해서 찾은 XML에 의해서 정의된 Bean 또는 Components class를 위해, Container는 보통 구체적인 타입을 미리(up front) 알고 있습니다. 그러나, `@Bean` 팩토리 메소드의 경우, 개발자는 선언된 리턴타입이 충분히  나타나는지 확인해야 합니다. 여러 인터페이스를 구현하는 components를 위해서 또는 잠재적으로 그들의 구현 타입에 의해서 언급되어지는 components를 위해서, factory method에 가장 명시적인 리턴 타입을 선언할 것을 고려해야한다. (최소한 Bean을 참조하는 주입 지점에 의해 요구되어지는 정도로 명시해야한다.)
 
 **개발자는`ApplicationContext`에 `@Autowired` 을 해당 타입의 배열을 예상하는 필드 또는 메소드에 추가함으로써 특정 타입의 모든 Bean을 Spring이 제공하도록 지시할 수 있다.**
 
@@ -166,7 +166,7 @@ public class MovieRecommender {
 
 > 개발자가 리스트나 배열 안에서 특정한 순서대로 정리되어지길 원한다면, target Bean은 `org.springframework.core.Ordered` 인터페이스를 구현할 수 있거나 또는 `@Order` 또는 표준 `@Priority` 애노테이션을 사용할 수 있습니다. 그렇지 않으면, 그들의 순서는 Container의 target Bean 정의에 대응하는 등록순서를 따를것이다.
 >
-> 개발자는 개별 Bean 정의에 대해 target class 레벨 및 @Bean 메소드에서 `@Order` 애노테이션을 선언할 수 있다.(동일한 Bean 클래스를 사용하는 여러개의 정의의 경우) `@Order` 값은 의존성 지점에서 우선순위에 영향을 미칠것이다. 그러나 `@Order` 값이 singleton 시작 순서에는 영향을 미치지 않는다는 것을 알아야 한다. singleton startup order 는 의존성 관계와 `@DependsOn` 선언에 의해서 결정되어지는 직교 관계이다.
+> 개발자는 개별 Bean 정의에 대해 target class 레벨 및 @Bean 메소드에서 `@Order` 애노테이션을 선언할 수 있다.(동일한 Bean 클래스를 사용하는 여러개의 정의의 경우) `@Order` 값은 의존성 지점에서 우선순위에 영향을 미칠것이다. 그러나 `@Order` 값이 singleton 시작 순서에는 영향을 미치지 않는다는 것을 알아야 한다. singleton 시작 순서는 의존성 관계와 `@DependsOn` 선언에 의해서 결정되어지는 직교 관계이다.
 >
 > 표준 `javax.annotation.Priority` 애노테이션은 메소드에서 선언 되어질 수 없기 때문에  `@Bean` 계층에서 이용이 불가능하다. 이러한 의미는 각 타입을 위한 단일 Bean에서 `@Order` 값과 `@Primary` 의 조화를 통해 모델링 되어질 수 있습니다.
 
@@ -209,7 +209,7 @@ public class simpleMovieLister {
 
  **`@Autowired` 의  `required` 속성이 잠재적으로 여러개의 생성자를 다룰 Spring 생성자 resolution 알고리즘 때문에 다소 다른 의미를 가지기 때문에 주입된 생성자와 factory method 인자는 특별한 경우이다**. 생성자와 팩토리 메소드 인자들은 기본적으로 필수적이지만 일치하는 Bean을 사용할 수 없는 경우 빈 인스턴스로 확인되는 다중 요소 삽입 지점(배열, 콜렉션, 맵)과 같은 단일 생성자 시나리오에서 몇 가지 특수 규칙이 있습니다. **생성자와 팩토리 메소드 인자들은 모든 의존성이 유일한 다수의 인자 생성자에 선언되어지는 흔한 구현 패턴을 허용합니다.** - 예로들어, `@Autowired` 애노테이션 없이 단일 public 생성자로써 선언되는 경우이다.
 
-> 주어진 Bean class에서 오직 한개의 생성자가 `@Autowired`를 `required` 속성을 `true`로써 선언한다. Spring Bean으로써 사용되어질 때 생성자가 autowire임을 나타냅니다. 게다가 `required` 속성이 `true`로 세팅 되어져 있다면, 오직 하나의 생성자가 @Autowired 함께 annotated 될 수 있습니다. 필수적이지 않은 다중 생성자가 annotation을 선언한다면 , 그들은 autowiring을 위한 후보자로써 고려되어질 것이다. Spring Container에서 Bean을 매칭함으로써 의존성을 만족시키는 생성자가 선택되어질것이다. 만약 어떠한 후보자도 선택되어지지 않는다면, 상위/기본 생성자(만약 존재한다면)가 사용되어질 것이다. 만약 클래스가 오직 하나의 생성자를 시작하기위해 선언한다면, 이것은 annotation이 붙지 않아도 항상 사용되어질 것다. annotation이 달린 생성자는 public일 필요가 없습니다.
+> 주어진 Bean class에서 오직 한개의 생성자가 `@Autowired`의 `required` 속성을 `true`로써 선언한다. Spring Bean으로써 사용되어질 때 생성자가 autowire임을 나타냅니다. 게다가 `required` 속성이 `true`로 세팅 되어져 있다면, 오직 하나의 생성자가 @Autowired 함께 annotated 될 수 있습니다. 필수적이지 않은 다중 생성자가 annotation을 선언한다면 , 그들은 autowiring을 위한 후보자로써 고려되어질 것이다. Spring Container에서 Bean을 매칭함으로써 의존성을 만족시키는 생성자가 선택되어질것이다. 만약 어떠한 후보자도 선택되어지지 않는다면, 상위/기본 생성자(만약 존재한다면)가 사용되어질 것이다. 만약 클래스가 오직 하나의 생성자를 시작하기위해 선언한다면, 이것은 annotation이 붙지 않아도 항상 사용되어질 것다. annotation이 달린 생성자는 public일 필요가 없습니다.
 >
 > **`@Autowired`의 `required`속성은 setter 메소드의 더이상 사용되지 않는 `@Required` 애노테이션 보다 더 권장됩니다.** `required` 속성을 `false`로 설정하는 것은 property가 autowiring 목적을 위해 필요하지 않다는것을 의미하고, autowired를 할 수 없는 경우 property는 무시됩니다. 다른 말로, `@Required` 는 Container에 의해 지원되는 모든 방법에 의해서 property를 설정한다는 점에서 강력합니다. 만약 어떠한 값도 설정되어 있지 않다면, 그에 알맞는 에러가 발생되어질 것이다.
 
@@ -253,23 +253,144 @@ public class MovieRecommender{
 }
 ```
 
-`@Autowired`, `@Inject`, `@Value`, `@Resource` 애노테이션은 Spring `BeanPostProcessor` 구현에 의해서 다루어진다. 개발자는 이러한 애노테이션을 사용자 정의 `BeanPostProcessor` 또는 `BeanFactoryPostProcessor` 타입 내에 적용할 수 없음을 의미한다. 이러한 타입은 XML 또는 Spring `@Bean` 메소드를 사용함으로써 명백히 wired up 시켜야 한다.
+`@Autowired`, `@Inject`, `@Value`, `@Resource` 애노테이션은 Spring `BeanPostProcessor` 구현에 의해서 다루어진다. 개발자는 이러한 애노테이션을 사용자 정의 `BeanPostProcessor` 또는 `BeanFactoryPostProcessor` 타입 내에 적용할 수 없음을 의미한다. 이러한 타입의 애노테이션은 XML 또는 Spring `@Bean` 메소드를 사용함으로써 명백히 wired up 시켜야 한다.
 
+---
 
+### 1.9.3 Fine-tuning Annotation-based Autowiring with `@Primary`  
 
+(`@Primary`를 사용한 어노테이션 기반의 Autowiring 미세 조정)
 
+타입에 의한 autowiring은 여러 개의 후보자를 야기시키기 때문에, 종종 선택 프로세스 동안에 제어에 관심을 기울일 필요가 있다. 이러한 목표를 달성하기 위한 한가지 방법은 Spring의 `@Primary` 어노테이션이다. **여러 Bean이 단일 값 의존성에 autowired가 되어질 후보자인 경우, `@Primary`는 특정한 Bean을 preference로 지정해야 함을 나타낸다.** 만약 여러개의 후보자 사이에 정확히 하나의 가장 우선순위 Bean이 존재한다면, 이 Bean은 Autowired 값이 된다.
 
+`firstMovieCatalog`를 `MovieCatalog`의 최우선 순위로써 정의하는 다음의 configuration을 고려해보자.
 
+```java
+@Configuration
+public class MovieConfiguration{
+   
+   @Bean
+   @Primary
+   public MovieCatalog firstMovieCatalog(){
+      // ...
+   }
+   
+   @Bean
+   public MovieCatalog SecondMovieCatalog(){
+      // ...
+   }
+   
+}
+```
 
+위의 구성에서, 다음의 `MovieRecommender`는 `firstMovieCatalog와` autowired 됩니다. (be autowired with)
 
+```java
+public class MovieRecommender{
+   
+   @Autowired
+   private MovieCatalog movieCatalog;
+   
+   // ...
+}
+```
 
+해당 Bean 정의는 다음과 같습니다.
 
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                           https://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context
+                         https://www.springframework.org/schema/context/spring-context.xsd">
+	<context:annotation-config/>
+   
+   <bean class="example.SimpleMovieCatalog" primary="true">
+   	<!-- Bean에 의해 요구되어지는 모든 의존성 주입 -->
+   </bean>
 
+   <bean class="example.SimpleMovieCatalog">
+   	<!-- Bean에 의해 요구되어지는 모든 의존성 주입 -->
+   </bean>
+   
+   <bean id="movieRecommender" class="example.MovieRecommender"/>
+   
+</beans>
+```
 
+---
 
+### 1.9.4. Fine-tuning Annotation-based Autowiring with Qualifiers (qualifiers를 이용한 Annotation 기반의 미세조정 Autowiring)
 
+**하나의 최상위 후보자가 결정되어질 수 있을 때, `@Primary`는 여러 인스턴스에서 타입에 의해 autowiring을 사용하기 위한 가장 효과적인 방법이다.** 선택 프로세스 동안에 더 많은 제어가 필요할 때, 개발자는 Spring의 `@Qualifier` 애노테이션을 사용할 수 있다. **개발자는 Qualifier 값을 특정한 인자와 연관시켜(associate) 특정 Bean이 각 인자를 위해 선택되도록 유형 일치 세트를 좁힐(narrowing) 수 있습니다.** 가장 간단한 경우에서, Qualifier는 가장 평범한 설명 값이다. 다음 예제를 참고하자. 
 
+```java
+public class MovieRecommender{
+   
+   @Autowired
+   @Qualifier("main")
+   private MovieCatalog movieCatalog;
+   
+   // ...
+}
+```
 
+개발자는 `@Qualifier` 애노테이션을 개개의 생성자 인자 또는 메소드 인자에 명시할 수 있다. 다음의 예를 참고하자.
+
+```java
+public class MovieRecommender {
+
+   private MovieCatalog movieCatalog;
+   
+   private CustomerPreferenceDao customerPreferenceDao;
+   
+   @Autowired
+   public void prepare(@Qualifier("main") MovieCatalog movieCatalog, 
+							CustomerPreferenceDao customerPreferenceDao) {
+      this.movieCatalog = movieCatalog;
+      this.customerPreferenceDao = customerPreferenceDao;
+   }
+   
+   // ...
+}
+```
+
+다음은 해당 Bean 정의를 보여주는 예제이다.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd">
+
+   <context:annotation-config/>
+   
+   <bean class="example.SimpleMovieCatalog">
+   	<qualifier value="main"/>
+      
+      <!-- 해당 Bean에 의해 요구되어지는 의존성 삽입 -->
+   </bean>
+   
+   <bean class="example.SimpleMovieCatalog">
+   	<qualifier value="action"/>
+      
+      <!-- 해당 Bean에 의해 요구되어지는 의존성 삽입 -->
+   </bean>
+   
+   <bean id="movieRecommender" class="example.MovieRecommender"/>
+   
+</beans>
+```
+
+1. `main` qualifier 값을 가진 Bean은 같은 값으로 규정된 생성자 인수와 연결됩니다.
+2. `action` qualifier 값을 가진 Bean은 같은 값으로 규정된 생성자 인수와 연결됩니다.
 
 
 
