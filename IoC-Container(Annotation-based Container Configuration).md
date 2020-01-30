@@ -392,19 +392,19 @@ public class MovieRecommender {
 1. `main` qualifier 값을 가진 Bean은 같은 값으로 규정된 생성자 인수와 연결됩니다.
 2. `action` qualifier 값을 가진 Bean은 같은 값으로 규정된 생성자 인수와 연결됩니다.
 
-**대체 match의 경우, Bean name은 기본적인 qualifier 값으로 고려되어진다.** 그러므로 개발자는 중첩된 qualifier 요소 대신에 `id`가 `main`인 Bean을 정의할 수 있고, 같은 결과를 야기시킬 것이다. 그러나, **이름에 의해서 특정한 Bean을 참조하는 규칙을 사용할 수 있음에도 불구하고, `@Autowired`는 기본적으로 선택적인 semantic qualifier을 사용한 type기반의 주입입니다.** **name 대체 Bean과 함께 사용되어지는 qualifier 값은 타입 matche 세트 내에서 좁은 의미를 항상 가지고 있습니다.** qualifier value는 고유한 Bean `id`에 대한 참조를 의미적으로 표현하지 않습니다. 좋은 qualifier 값은 `main` 또는 `EMEA` 또는 `persistent` 이며, Bean `id`와 독립적인 특정 구성요소의 특성을 나타내며, 이는 익명 Bean 정의의 경우 이전 예제와 같이 자동 생성 될 수 있습니다. 
+**대체 match의 경우, Bean name은 기본적인 qualifier 값으로 고려되어진다.** 그러므로 개발자는 중첩된 qualifier 요소 대신에 `id`가 `main`인 Bean을 정의할 수 있고, 같은 결과를 야기시킬 것이다. 그러나, **name에 의해서 특정한 Bean을 참조하는 규칙을 사용할 수 있음에도 불구하고, `@Autowired`는 기본적으로 선택적인 semantic qualifier을 사용한 type기반의 주입입니다.** **심지어 Bean name의 대체로 사용되어지는 qualifier 값은 타입 match 세트 내에서 좁은 의미를 항상 가지고 있습니다.** qualifier value는 고유한 Bean `id`에 대한 참조를 의미적으로 표현하지 않습니다. 좋은 qualifier 값은 `main` 또는 `EMEA` 또는 `persistent` 이며, Bean `id`의 독립적 특정 구성요소의 특성을 나타내며, 이는 익명 Bean 정의의 경우 이전 예제와 같이 자동 생성 될 수 있습니다. 
 
-**Qualifier는 이전에 논의된 `Set<MovieCatalog>`와 같은 타입이 정의된 컬렉션에 사용된다. 이러한 경우에, 선언된 qualifiers에 따라(according to) 모든 matching Bean들은 컬렉션으로써 의존성이 주입되어진다.** 이러한 사실은 qualifier가 유일할 필요가 없다는 것을 함축한다. 오히려 그들은 필터링 기준을 구성합니다. 예로들어, 개발자가 같은 qualifier 값인 "action"으로 여러 `MovieCatalog` Bean을 정의할 수 있고, 이러한 모든 Bean들은 `@Qualifier("action")`애노테이션이 붙은 `Set<MovieCatalog>` 에 주입됩니다.
+**Qualifier는 이전에 논의된 `Set<MovieCatalog>`와 같은 타입이 정의된 컬렉션에 사용된다. 이러한 경우에, 선언된 qualifiers에 따라(according to) 모든 일치하는 Beans는 컬렉션으로써 의존성이 주입되어진다.** **이러한 사실은 qualifier가 유일할 필요가 없다는 것을 함축한다.** 오히려 그들은 필터링 기준을 구성합니다. 예로들어, 개발자가 같은 qualifier 값 "action"으로 여러 `MovieCatalog` Bean을 정의할 수 있고, 이와같은 모든 Bean들은 `@Qualifier("action")`애노테이션이 붙은 `Set<MovieCatalog>` 에 주입됩니다.
 
-> 타입-matching 내에서 qualifier 값들이 target Bean names에 대하여 선택하는것은, 주입 지점에서 `@Qualifier` 애노테이션이 필요하지 않는다. 만약 유일하지 않는 의존성 상황에 대하여 어떠한 해결 지시자(ex. qualifier 또는 Primary)도 없다면, Spring은 target Bean name에 대하여 의존성 주입 이름을 match할 것이다. 그리고 같은 이름의 후보자를 선택할 것이다.
+> 타입-matching 내에서 qualifier 값들이 target Bean names에 대응해 선택하는것은, 주입 지점에서 `@Qualifier` 애노테이션이 필요하지 않는다. **만약 유일하지 않는 의존성 상황에 대하여 어떠한 해결 지시자(ex. qualifier 또는 Primary)도 없다면, Spring은 target Bean name에 대하여 의존성 주입 이름을 match할 것이다. 그리고 같은 이름의 후보자를 선택할 것이다.**
 
-**즉, 만약 개발자가 name에 의한 annotation 기반의 의존성 주입을 표현하고자 한다면, 유형 일치 후보중에서 Bean anme으로 선택할 수 있다고 하더라도 `@Autowired`를 주로 사용하지 마십시요.** **대신에 JSR-250 `@Resource` 애노테이션을 사용하세요. `@Resource` 애노테이션은 구성요소의 유일한 이름에 의해 특정한 target 구성요소를 식별하기 위해 의미적으로 정의됩니다.**  matching process와 선언된 유형이 관계가 없는 애노테이션이다. `@Autowired`는 꽤(rather) 다른 의미를 가집니다: 타입에 의해서 후보자 Bean이 선택되어지고 난 후, 특정한 `String` qualifier 값은 이러한 선택된 후보자 내에서만 고려되어 집니다.
+**즉, 만약 개발자가 name에 의한 annotation 기반의 의존성 주입을 표현하고자 한다면, 유형 일치 후보중에서 Bean anme으로 선택할 수 있다고 하더라도 `@Autowired`를 우선적으로 사용하지 마십시요.** **대신에 JSR-250 `@Resource` 애노테이션을 사용하세요. `@Resource` 애노테이션은 구성요소의 유일한 name에 의해 특정한 target 구성요소를 식별하기 위해 의미적으로 정의됩니다.**  matching process와 선언된 유형이 관계가 없는 애노테이션이다. `@Autowired`는 꽤(rather) 다른 의미를 가집니다: 타입에 의해서 후보자 Bean이 선택되어지고 난 후, 특정한 `String` qualifier 값은 이러한 선택된 후보자 내에서만 고려되어 집니다.
 
-컬렉션, `Map`, 배열 타입으로 선언된 Bean에 대하여, `@Resource`는 좋은 선택이다. `@Resource`는 유일한 name에 의해 특정한 컬렉션 또는 배열 Bean을 참조한다. **즉, 4.3에서 현재 컬렉션의 경우,  `@Bean` 반환 타입 서명 또는 컬렉션 상속 계층 구조에서 요소 타입 정보가 유지되는 한 Spring의 `@Autowired` 타입 일치 알고리즘을 통해 Map, array 타입을 일치시킬 수 있습니다.** 이러한 경우에, 개발자는 같은 타입의 여러개의 컬렉션에서 선택하기 위해 qualifier 값을 사용할 수 있습니다.
+컬렉션, `Map`, 배열 타입으로 선언된 Bean에 대하여, `@Resource`는 좋은 선택이다. `@Resource`는 유일한 name에 의해 특정한 컬렉션 또는 배열 Bean을 참조한다. **즉, 4.3에서 현재 컬렉션의 경우,  `@Bean` 반환 타입 서명 또는 컬렉션 상속 계층 구조에서 요소 타입 정보가 유지되는 한 Spring의 `@Autowired` 타입 일치 알고리즘을 통해 Map, array 타입을 일치시킬 수 있습니다.** 이러한 경우에, 개발자는 같은 타입의 여러개의 컬렉션에서 Bean을 선택하기 위해 qualifier 값을 사용할 수 있습니다.
 
 4.3 현재, `@Autowired`는 주입에 대한 자체 참조도 고려합니다.(즉, 현재 주입되어진 Bean에 대한 참조) 자신의 의존성을 주입하는 것은 대비책 이라는 것을 명심해라. 다른 Components의 일반적인 의존성 주입은 항상 우선(precedence)을 갖는다. 이러한 의미에서, 자체 참조는 일반적인 후보자 선택에 참여할 수 없고, 그러므로 절대로 최우선순위가 될 수 없다. 반대로, 자체 참조는 항상 낮은 우선 순위로 끝납니다. 실제로, 개발자는 자체 참조를 최후에 수단(resort) 으로써 사용해야 합니다.(ex. Bean의 트랜잭션 프록시를 통해 같은 인스턴스에서 다른 메소드를 호출하는 경우) 이러한 시나리오에서 영향을 받는 메소드를 별도의 대리자 Bean으로 제외(factor out)시키는 것을 고려하십시오. 그 대신에, 개발자는 `@Resource`를 사용하여 고유 이름으로 현재 Bean 프록시를 다시 얻을 수 있습니다.
 
-> **같은 configuration class의 `@Bean` 메소드의 결과를 주입하기 위해 시도하는 것은 자체 참조 시나리오가 효과적이다.**  실제로 필요한 경우(configuration class의 autowired 필드와 반대로) 메소드 시그니처에서 이러한 참조를 느리게 해결하거나 영향을 받는  `@Bean` 메소드를 정적으로 선언하여 설정 클래스 인스턴스 및 라이프 사이클에서 분리합니다. 그렇지 않으면 이러한 Bean들은 최상위 후보자로서 선택된 다른 configuration class들에서 Bean을 match하는 차선책을 고려해야한다.(가능하다면)
+> **같은 configuration class의 `@Bean` 메소드의 결과를 주입하기 위해 시도하는 것은 사실은 자체 참조 시나리오 입니다. **  실제로 필요한 경우(configuration class의 autowired 필드와 반대로) 메소드 시그니처에서 이러한 참조를 느리게 해결하거나 영향을 받는  `@Bean` 메소드를 정적으로 선언하여 설정 클래스 인스턴스 및 라이프 사이클에서 분리합니다. 그렇지 않으면 이러한 Bean들은 최상위 후보자로서 선택된 다른 configuration class들에서 Bean을 match하는 차선책을 고려해야한다.(가능하다면)
 
 **`@Autowired`는 필드와 생성자, 여러 인자를 갖는 메소드에 적용하고, qualifier 애노테이션을 통해 parameter 단계에서 후보자 줄이기가 가능하다. 이와 대조적으로 `@Resource`는 단일 인자를 갖는 Bean Property setter 메소드와 필드를 위해 지원되어진다.** 결과적으로, 개발자는 주입 대상이 생성자 또는 다중 인자 메소드인 경우에 qualifier을 사용해야 한다.
 
@@ -505,6 +505,194 @@ public class MovieRecommender{
 ```
 
 1. 이러한 요소는 qualifier을 명시한다.
+
+**개발자는 또한 간단한 `value` 속성 대신에 이름이 붙여진 속성을 사용할 수 있는 사용자 qualfier 애노테이션을 정의할 수 있다.** 여러 속성 값이 autowired된 인자 또는 필드에 명시되어 있을때, Bean 정의는 autowire 후보로 간주되기 위해 이러한 모든 속성값과 일치해야 합니다. 다음의 annotation 정의 예제를 고려해 보자.
+
+```java
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Qualifier
+public @interface MovieQualifier{
+   
+   String genre();
+   
+   Format format();
+}
+```
+
+이경우에 `Format`은 enum이고, 다음과 같이 정의되어 있다.
+
+```java
+public enum Format{
+   VHS, DVD, BLURAY
+}
+```
+
+autowired된 필드는 사용자 qualifier와 함께 annotation이 붙여져 있고, 두개의 속성인(`genre` 와 `format`) 모두의 값을 다음 예제에서와 같이 포함한다.
+
+```java
+public class MovieRecommender{
+   
+   @Autowired
+   @MovieQualifier(format=Format.VHS, genre="Action")
+   priavte MovieCatalog actionVhsCatalog;
+   
+   @Autowired
+   @MovieQualifier(format=Format.VHS, genre="Comedy")
+   private MovieCatalog comedyVhsCatalog;
+   
+   @Autowired
+   @MovieQualifier(format=Format.DVD, genre="Action")
+   private MovieCatalog actionDvdCatalog;
+   
+   @Autowired
+   @MovieQualifier(format=Format.BLURAY, genre="Comedy")
+   private MovieCatalog comedyBluRayCatalog;
+   
+   //...
+}
+```
+
+**최종적으로, Bean 정의는 일치하는 qualifier 값을 포함해야만 한다.** 이 예제는 `<qualifier/>` 요소 대신에 Bean meta 속성을 사용할 수 있다는 것을 설명하는 예제이다. 만약 가능하다면, `<qualifier/>` 요소와 속성이 우선시하지만, 다음 예의 마지막 두개의 Bean 정의에서와 같이 qualifier가 존재하지 않는 경우 `<meta/>`태그 내에 제공된 값으로 대체됩니다(fall back).
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:annotation-config/>
+
+    <bean class="example.SimpleMovieCatalog">
+        <qualifier type="MovieQualifier">
+            <attribute key="format" value="VHS"/>
+            <attribute key="genre" value="Action"/>
+        </qualifier>
+	     <!-- 해당 Bean에 필요한 모든 의존성들을 주입 -->
+    </bean>
+
+    <bean class="example.SimpleMovieCatalog">
+        <qualifier type="MovieQualifier">
+            <attribute key="format" value="VHS"/>
+            <attribute key="genre" value="Comedy"/>
+        </qualifier>
+	     <!-- 해당 Bean에 필요한 모든 의존성들을 주입 -->
+    </bean>
+
+    <bean class="example.SimpleMovieCatalog">
+        <meta key="format" value="DVD"/>
+        <meta key="genre" value="Action"/>
+	     <!-- 해당 Bean에 필요한 모든 의존성들을 주입 -->
+    </bean>
+
+    <bean class="example.SimpleMovieCatalog">
+        <meta key="format" value="BLURAY"/>
+        <meta key="genre" value="Comedy"/>
+	     <!-- 해당 Bean에 필요한 모든 의존성들을 주입 -->
+    </bean>
+
+</beans>
+```
+
+---
+
+### 1.9.5 Using Generics as Autowiring Qualifiers
+
+**`@Qualifier` 애노테이션 이외에, 개발자는 암시적 형식의 자격으로  Java generic 타입을 사용할 수 있다.** 
+
+예로들어 다음과 같은 cofiguration을 갖고 있다고 가정 해 보자.
+
+```javascript
+@Configuration
+public class MyConfiguration{
+   
+   @Bean
+   public StringStore stringStore(){
+      return new StringStore();
+   }
+   
+   @Bean
+   public IntegerStore integerStore(){
+      return new IntegerStore();
+   }
+}
+```
+
+위의 Bean들이 제네릭 인터페이스를 구현한다고 가정해 보자. (즉 `Store<String>`  과 `Store<Integer>`). 
+
+> ##### **Generic Interface**
+>
+> **제네릭** : 클래스에서 매개변수 형식의 자료형을 사용할 수 있는 기능이다.
+>
+> - 자료형에 얽매이지 않는 알고리즘을 작성할 수 있다.
+> - 알고리즘의 재사용성을 높인다
+> - 자료형으로 인해 생기는 프로그램 중복을 줄여준다.
+>
+> **제네릭 인터페이스** 
+>
+> ```java
+> interface GenericInterface <TypeParameters> {
+> 인터페이스 내용
+> }
+> ```
+>
+> **제네릭 인터페이스 예시**
+>
+> ```java
+> public interface GenericInterface<T>{
+>    public void setValue(T x);
+>    public String getValueType();
+> }
+> ```
+>
+> **제네릭 인터페이스를 구현한 제네릭 예시**
+>
+> ```java
+> public class GenericClass<T> implements GenericInterface<T>{
+>    private T value;
+>    @Override
+>    public void setValue(T x){
+>       value = x;
+>    }
+>    @Override
+>    public String getValueType(){
+>       return value.getClass().toString();
+>    }
+> }
+> ```
+
+개발자는 qualifier로써 사용되는 generic과 인터페이스를 `@Autowire`할 수 있다. 다음 예제에서 보여준다.
+
+```java
+@Autowired
+private Store<String> s1; // <String> qualifier, stringStore Bean을 주입한다.
+
+@Autowired
+private Store<Integer> s2; // <Integer> qualifier, integerStore Bean을 주입한다.
+```
+
+제네릭 qualifier는 `List` 와 `Map` 인스턴스 및 배열을 autowiring 할 때 사용된다. 다음의 예는 제네릭 `List` 를 autowire하는 예제이다.
+
+```java
+// <Integer> 제네릭을 갖는 모든 Store Bean을 주입한다.
+// 이 List에서는 Store<String> Bean들은 나타나지 않을 것이다.
+@Autowired
+private List<Store<Integer>> s;
+```
+
+---
+
+### 1.9.6 Using `CustomAutowireConfigurer`
+
+
+
+
+
+
 
 
 
