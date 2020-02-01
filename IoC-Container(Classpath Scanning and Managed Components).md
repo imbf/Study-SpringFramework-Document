@@ -156,6 +156,150 @@ public class AppConfig {
 
 ### 1.10.4 Using Filters to Customize Scanning
 
+**기본적으로, `@Component`, `@Repository`, `@Service`, `@Controller`, `@Configuration`, `@Component` 애노테이션이 붙은 사용자 정의 애노테이션이 붙은 클래스들은 오직 탐색된 후보자 Components이다.** 그러나 개발자는 이러한 동작을 사용자 정의 필터를 적용함으로써 수정하고 확장할 수 있다. `@ComponentScan` 애노테이션에 `includeFilters` 또는 `excludeFilters` 속성으로써 필터를 추가해라. 또는 XML configuration 내의 `<context:component-scan>` 요소의 자손 요소로써 `<context:include-filter/>`  또는 `<context:exclude-filter/>` 요소를 추가해라. 각 필터의 요소는 `type` 과 `expression` 속성을 필요로 한다. 다음은 필터링 옵션에 대한 설명이다.
+
+<img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200201104136828.png" alt="image-20200201104136828" style="zoom:50%;" />
+
+다음의 예제는 모든 `@Respository` 애노테이션을 무시하고 "stub" respositories 를 대신해서 사용하는 configuration 예제이다.
+
+```java
+@Configuration
+@ComponentSca(basePackages = "org.example",
+          includeFilters = @Filter(type = FilterType.REGEX, pattern = ".*Stub.*Repository"),
+          excludeFilters = @Filter(Repository.class))
+public class AppConfig {
+   // ...
+}
+```
+
+다음은 동일한 XML 예제를 보여준다.
+
+```xml
+<beans>
+	<context:component-scan base-package="org.example">
+   	<context:include-filter type="regex" expression=".*Stub.*Repository"/>
+      <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+   </context:component-scan>
+</beans>
+```
+
+> 개발자는 어노테이션에 `use-default-filters="false"`를 세팅함으로써 또는 `<component-scan/>` 요소 속성에 `use-default-filters="false"`를 제공함으로써 기본 필터를 사용할 수 없게 할 수 있다. 이렇게 하면 실제로 어노테이션 또는 `@Component` , `@Repository`, `@Service`, `@Controller`, `@RestController`, `@configuration` 메타 어노테이션이 있는 클래스의 자동 감지를 사용할 수 없습니다.
+
+---
+
+### 1.10.5 Defining Bean Metadata within Components
+
+**Spring Components는 Bean definition metadata를 Container에 기여할 수 있다. 개발자는 `@Configuration`이 붙여진 클래스 내에서 Bean metadata를 정의하기위해 `@Bean` 애노테이션을 사용할 수 있다.** 다음의 예제에서 어떻게 이러한 것들을 하는지 보여준다.
+
+```java
+@Component
+public class FactoryMethodComponent {
+   
+   @Bean
+   @Qualifier("public")
+   public TestBean publicInstance() {
+      return new TestBean("publicInstance");
+   }
+   
+   public void doWork(){
+      // Component 메소드 구현 생략
+   }
+}
+```
+
+이전 클래스는 `doWork()` 메소드에 어플리케이션 특정 코드가 있는 Spring Component이다. 위 클래스는 `publicInstance()` 메소드를 참조하는 팩토리 메소드를 가진 Bean 정의에 기여한다. `@Bean` 애노테이션은 팩토리 메소드와 `@Qualifier` 애노테이션을 통한 qualifier 값과 같은 Bean 정의 properties를 식별한다. 다른 명시할 수 있는 메소드 계층의 애노테이션은 `@Scope`, `@Lazy`, 그리고 사용자 qualifier 애노테이션이다. 
+
+> Component 초기화를 위한 역할 외에도, 개발자는 `@Autowired` 또는 `@Inject` 가 붙여져 있는 의존성 주입 지점에 `@Lazy` 애노테이션을 위치할 수 있다. 이러한 문맥에서, `@Lazy` 애노테이션은 lazy-resolution 프록시 의존성 주입을 야기시킨다.
+
+이전에 논의한 것 처럼, Autowired 필드와 메소드는 `@Bean` 메소드의 autowiring을 위한 추가적인 지원과 함께 제공됩니다. 다음의 예제는 어떻게 처리하는지에 대해서 보여줍니다.
+
+```java
+@Component
+public class FactoryMethodComponent {
+   private static int i;
+   
+   @Bean
+   @Qualifier("public")
+   public TestBean publicInstance(){
+      return new TestBean("publicInstance");
+   }
+   
+   // 사용자 qualifier의 사용 과 메소드 인자들의 autowiring
+   @Bean
+   protected TestBean protectedInstance(@Qualifier("public") TestBean spouse,
+                                       @Value("#{privateInstance.age}") String country){
+      TestBean tb = new TEstBean("protectedInstance", 1);
+      tb.setSpouse(spouse);
+      tb.SetCountry(country);
+      return tb;
+   }
+   
+   @Bean
+   private TestBean privateInstance(){
+      return new TestBean("privateInstance", i++);
+   }
+   
+   @Bean
+   @RequestScope
+   public TestBean requestScopedInstance(){
+      return new TestBean("requestScopedInstance", 3);
+   }
+}
+```
+
+위의 예제에서 `String` 메소드 인자인 `country`를 `privateInstance` 라고 명명된 다른 Bean의 `age` property의 값에 autowire 합니다. Spring 표현 언어 요소는 `#{ <expression> }` 표기법(notatin)을 통해서 property 값을 정의합니다. `@Value` 어노테이션의 경우, 표현식 resolver는 표현식 텍스트를 분석(resolve)할 때 Bean 이름을 찾도록 미리 구성됩니다.
+
+Spring Framework 4.3부터, **현재 Bean 생성을 일으키는 requesting 주입 지접에 접근하기 위해 `InjectionPoint` 유형(또는 더 구체적인 서브클래스인 `DependencyDescriptor`)의 팩토리 메소드 매개 변수를 선언 선언할 수도 있습니다.** 이는 기존 인스턴스의 주입이 아닌 실제 Bean 인스턴스 생성에만 적용된다는 것을 명심해야 한다. **결과적으로, 이 기능은 프로토 타입 범위의 Bean에 가장 적합합니다.** 다른 범위의 경우, 팩토리 메소드는 주어진 범위에서 새로운 Bean 인스턴스 생성을 유발하는 주입 지점만 볼 수 있습니다. (예로들어, lazy Singleton Bean의 생성을 유발하는 종속성). 이러한 상황에서 개발자는 제공된 의존성 주입 메타데이터를 semantic care와 함께 사용할 수 있습니다. 다음의 예제에서 어떻게 `InjectionPoint`를 사용하는지 보여줍니다.
+
+```java
+@Component
+public class FactoryMethodComponent {
+   
+   @Bean @Scope("prototype")
+   public TestBean prototypeInstance(InjectionPoint injectionPoint){
+      return new TestBean("prototypeInstance for " + injectionPoint.getMember());
+   }
+}
+```
+
+일반적인 Spring Component의 `@Bean` 메소드는 Spring `@Configuration` 클래스내의 해당 메소드와 다르게 처리됩니다. **`@Component` 클래스들은 GGLIB로 향상(enhance)되지 않아 메소드와 필드의 호출을 가로채지 않는다는 점이 차이점이다.** **GGLIB 프록싱은 `@Configuration` 클래스의 `@Bean` 메소드 내에서 필드 또는 메소드를 호출하여 collaborating 객체에 대한 Bean metadata 참조를 작성하는 수단이다.** 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
