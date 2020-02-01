@@ -142,7 +142,19 @@ public class AppConfig {
 </beans>
 ```
 
-> 
+> `<context:component-scan>`의 사용은 `<context:annotation-config>`의 기능을 암묵적으로 사용할 수 있게 해줍니다. `<context:component-scan>`을 사용할 때에는 `<context:annotation-config>` 요소를 포함할 필요가 없다.
+
+> **classpath 패키지를 스캔하려면 classpath에 해당 디렉토리 항목이 있어야합니다.** JAR파일을 Ant와함께 빌드 시킬 때, JAR task의 파일 전용 스위치를 활성하 하지 마십시요. 또한 일부 환경에서 보안정책에 기초하여 classpath 디렉토리가 노출되지 않을 수 있습니다. 예로들어, JDK 1.7.0_45 이상에서 동작하는 독립형 어플리케이션( manifests 에서 'Trusted-Library' 설정이 필요하다. - https://stackoverflow.com/questions/19394570/java-jre-7u45-breaks-classloader-getresources 를 참고해라. )
+>
+> JDK 9의 모듈 경로(jigsaw)에서, Spring의 classpath 스캔은 예측한대로 일반적으로 작동합니다. 그러나, Component 클래스가 `module-info` descriptor로 내보내졌는지 확인하세요. 만약 Spring이 클래스의 non-public 멤버를 호출할거라고 예상한다면, class가 'opened' 되었는지 확인하세요. ( 즉, class들은 `module-info` descriptor에서 `exports` 선언 대신에 `opens`선언을 사용합니다.  )
+
+<u>**게다가, `AutowiredAnnotationBeanPostProcessor` 와 `CommonAnnotationBeanPostProcessor`는 Component- scan 요소를 사용할때 함축적으로 포함되어집니다. 이러한 사실은 XML에서 제공되어지는 Bean Configuration metadata 없이도 두개의 Component 들이 autodetected 와 wired 되어진다는 것을 의미한다.**</u> 
+
+> 개발자는 `annotation-config`  속성의 값을 `false` 로 포함시킴으로써 `AutowiredAnnotationBeanPostProcessor` 과 `CommonAnnotationBeanPostProcessor` 등록을 쓰지 않을 수도 있습니다.
+
+---
+
+### 1.10.4 Using Filters to Customize Scanning
 
 
 
