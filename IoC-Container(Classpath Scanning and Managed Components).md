@@ -262,7 +262,7 @@ public class FactoryMethodComponent {
 }
 ```
 
-일반적인 Spring Component의 `@Bean` 메소드는 Spring `@Configuration` 클래스내의 해당 메소드와 다르게 처리됩니다. **`@Component` 클래스들은 GGLIB로 향상(enhance)되지 않아 메소드와 필드의 호출을 가로채지 않는다는 점이 차이점이다.** **GGLIB 프록싱은 `@Configuration` 클래스의 `@Bean` 메소드 내에서 필드 또는 메소드를 호출하여 collaborating 객체에 대한 Bean metadata 참조를 작성하는 수단이다.** 
+일반적인 Spring `Component` 의 `@Bean` 메소드는 Spring `@Configuration` 클래스내의 해당(counterpart) 메소드와 다르게 처리됩니다. **`@Component` 클래스들은 <u>GGLIB</u>로 향상(enhance)되지 않아 메소드와 필드의 호출을 가로막지 않는다는 점이 차이점이다.** **GGLIB 프록싱은 `@Configuration` 클래스의 `@Bean` 메소드 내에서 필드 또는 메소드를 호출하여 collaborating 객체에 대한 Bean metadata 참조를 작성하는 수단이다.** 
 
 
 
