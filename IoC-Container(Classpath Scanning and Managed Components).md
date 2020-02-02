@@ -262,17 +262,184 @@ public class FactoryMethodComponent {
 }
 ```
 
-일반적인 Spring `Component` 의 `@Bean` 메소드는 Spring `@Configuration` 클래스내의 해당(counterpart) 메소드와 다르게 처리됩니다. **`@Component` 클래스들은 <u>GGLIB</u>로 향상(enhance)되지 않아 메소드와 필드의 호출을 가로막지 않는다는 점이 차이점이다.** **GGLIB 프록싱은 `@Configuration` 클래스의 `@Bean` 메소드 내에서 필드 또는 메소드를 호출하여 collaborating 객체에 대한 Bean metadata 참조를 작성하는 수단이다.** 
+일반적인 Spring `Component` 의 `@Bean` 메소드는 Spring `@Configuration` 클래스내의 해당(counterpart) 메소드와 다르게 처리됩니다. **`@Component` 클래스들은 <u>GGLIB</u>로 향상(enhance)되지 않아 메소드와 필드의 호출을 가로막지(intercept) 않는다는 점이 차이점이다.** **GGLIB 프록싱은 `@Configuration` 클래스의 `@Bean` 메소드 내에서 필드 또는 메소드를 호출하여 collaborating 객체에 대한 Bean metadata 참조를 작성하는 수단이다.** 이러한 메소드들은 일반적인 Java semantics으로 호출되는 것이 아니라 `@Bean` 메소드에 대한 프로그래밍 호출을 통해 다른 Bean을 참조 할 때도 일반적인 lifecycle 관리 및 Spring Bean 프록시를 제공하기 위해 컨테이너를 통과합니다(go through). 이에 반해서(In contrast), 일반적인 `@Component`  클래스의 `@Bean` 메소드 내의 필드 또는 메소드가 호출되는 것은 특별한 GGLIB 프로세싱 또는 다른 제약사항의 적용 없이 표준 Java Semantics를 가진다
 
+> **개발자가 `@Bean` 메소드를 `static`으로써 선언하면, 메소드를 포함하는 configuration class를 인스턴스로써 생성하지 않고 호출되어질 것이다. 이러한 것들은 특히 post-processor Bean( ex. `BeanFactoryPostProcessor` 또는 `BeanPostProcessor` 타입)을 정의할 때 의미가 있다.** 이러한 Bean들은 Container lifecycle 에서 일찍 초기화가 되고, 해당 시점에서 configuration의 다른 부분을 유발시키지 않아야 하기 때문이다.
+>
+> 정적인 `@Bean` 메소드들을 호출하는 것은 기술적인 한계로 인해  `@Configuration` 클래스(이전 섹션에서 설명) 내에서 조차도 Container에 의해서 가로막히지 않습니다. GGLIB 서브클래스는 non-static 메소드들만 오버라이드 할 수 있다. **결과적으로, `@Bean` 메소드들의 직접적인 호출은 표준 Java semantics를 가지고, 독립 인스턴스가 팩토리 메소드 자체에서 직접 리턴됩니다.**
+>
+> `@Bean` 메소드들의 Java 언어 가시성은 Spring Container 결과 Bean 정의에 즉각적인 영향을 미치지 않습니다. 개발자는 팩토리 메소드를 non-@Confiugration 클래스에 선언할 수 있고 정적 메소드에 대해서도 팩토리 메소드를 자유롭게 선언할 수 있다. 그러나 `@Configuration` 클래스 내의 일반적인 `@Bean` 메소드들은 오버라이드가 필요하다. - 즉, 그들은 `private` 또는 `final` 로써 선언되면 안된다.
+>
+> `@Bean` 메소드들은 주어진 component 또는 configuration 클래스의 base 클래스 에서 발견되어질 뿐만 아니라 component 또는 configuration 클래스로부터 구현되어진 interface에 선언되어진 Java 8 기본 메소드들에서 발견됩니다. Spring 4.2 부터, 이러한 사실은 Java 8 기본 메소드들을 통해서 다중 상속이 가능한 복잡한 configuration 구성에서 많은 융통성을 가질 수 있게 합니다.
+>
+> 결과적으로, 단일 클래스는 런타임시에 이용가능한 의존성에 따라 사용할 여러 팩토리 메소드 배열로서 동일한 Bean에 대해 여러 `@Bean` 메소드를 보유 할 수 있습니다. 이러한 사실은 다른 configuration 시나리오에서 가장 탐욕적인 생성자 또는 팩토리 메소드를 고르는 것과 같은 알고리즘 입니다. 구성 시간에 만족할 수 있는 의존성 수가 가장 많은 변형이 선택됩니다. Container가 여러개의 `@Autowired` 생성자 중에서 선택하는 방식과 유사하게끔
 
+---
 
+### 1.10.6 Naming Autodetected Components 
 
+**Scanning process의 부분으로써 Component가 자동 탐색될 때, Component의 Bean name은 해당 Scanner에 알려진 `BeanNameGenerator` 전략에 의해서 생성되어진다.** 기본적으로, name `value`를 포함하는 Spring stereotype 애노테이션(`@Component`, `@Repository`, `@Service`, `@Controller`) 해당 Bean 정의에 해당 name을 제공합니다.
 
+만약 이러한 애노테이션들이 name `value`를 가지고 있지 않거나, 모든 탐색된 Component(사용자 필터에 의해서 발견된 것)에 대한 name `value` 값을 포함하고 있지 않은 경우, 기본 Bean name 생성기는 대문자로 규정되지 않는 non-qualified class name을 리턴할 것이다. 예로들어, 다음의 component 클래스가 탐색되었다면, name은 `myMovieLister` 과 `movieFinderImpl`이 될것이다.
 
+```java
+@Service("myMovieLister")
+public class SimpleMovieLister {
+   // ...
+}
+```
 
+```java
+@Respository
+public class MovieFinderImpl implements MovieFinder {
+   // ...
+}
+```
 
+개발자가 기본적이 Bean-naming 전략에 대해 의존하는 것을 원치 않을 경우, 사용자 정의 Bean-naming strategy를 제공할 수 있다. 첫번째로, `BeanNamingGenerator` 인터페이스를 구현하고, 인수없는 기본 생성자를 포함해야 합니다. 그 다음에(Then), Scanner를 설정할 때 fully qualified 클래스 name을 제공해야 합니다. 다음 예제에서 annotation과 Bean definition에 대한 예제를 보여 줄 것입니다.
 
+> 만약 동일한 non-qualified 클래스 name을 가진 여러 자동 탐색된 component 때문에 naming 충돌이 발생한다면(동일한 name을 가지지만 다른 패키지에 존재하는 클레스들), 생성된 Bean name을 위해서 개발자는 완전히 qualified된 클래스 name을 기본으로하는 `BeanNameGenerator`를 설정해야 할 필요가 있다. Spring Framework 5.2.3 부터, `org.springframework.context.annotation`에 위치한 `FullyQualifiedAnnotationBeanNameGenerator`는 이러한 목적에서 사용될 수 있다.
 
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example", nameGerator = MyNameGerator.class)
+public class AppConfig {
+   // ...
+}
+```
+
+```xml
+<beans>
+	<context:component-scan base-package="org.example" name-generator="org.example.MyNameGenerator"/>
+</beans>
+```
+
+**일반적으로 다른 구성 요소가 명시적으로 참조할 때마 주석으로 name을 정의하는 것을 고려해라. 반면에, 자동 생성되는 name은 Container가 wiring을 담당할 때 적합하다.**
+
+---
+
+### 1.10.7 Providing a Scope for Autodetected Components
+
+일반적으로 Spring이 관리하는 component와 같이, 자동 탐색된 Component를 위한 가장 일반적이고 기본 범위는 `Singleton` 이다. 그러나, 때때로 개발자는 `@Scope` annotation에 명시되어질 수 있는 또 다른 scope가 필요하다. 개발자는 애노테이션안에 scope의 name을 제공할 수 있다. 다음 예제에서 보여준다.
+
+```java
+@Scope("prototype")
+@Repository
+public class MovieFinderImpl implements MovieFinder {
+   // ...
+}
+```
+
+> **`@Scope` 애노테이션은 오직 구체적인 Bean class(`component` 애노테이션이 붙은) 또는 팩토리 메소드 (`@Bean` 메소드 )에서만 검사됩니다.** XML Bean 정의와는 대조적으로, Bean 정의 상속에 대한 개념은 없으며, 클래스 레벨의 상속 계층은 metadata 목적과 관련이 없습니다.
+
+구체적으로 Spring Context 내의 web-specific 범위인 request 또는 session에 대한 정보는 Request, Session, Application, WebSocket Scopes를 참고해 보아라. **이러한 범위를 위해 미리 빌드된 애노테이션과 마찬가지로, 개발자는 자신의 scoping 애노테이션을 Spring meta-annotation 접근을 사용해서 구성할 수 있습니다.** 예로들어, `@Scope("prototype")` 으로 메타 주석이 달린 사용자 정의 주석은 사용자 정의 프록시 모드를 선언할 수도 있습니다.
+
+> **애노테이션 기반의 접근법에 의존하는 것 보다는 범위 해결을 위한 사용자 정의 전략을 제공하기 위해, 개발자는 `ScopeMetadataResolver` 인터페이스를 구현할 수 있습니다. 인자가 없는 기본 생성자를 포함해야 합니다.** 그러면 Scanner를 설정할 때 완전히 qualified된 클래스를 제공할 수 있습니다. 다음의 예제는 애노테이션과 Bean 정의에 대해서 보여줍니다.
+
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example", scopeResolver = MyScopeResolver.class)
+public class AppConfig{
+   // ...
+}
+```
+
+```xml
+<beans>
+	<context:component-scan base-package="org.example" scope-resolver="org.example.MyScopeResolver"/>
+</beans>
+```
+
+특정한 non-Singleton 범위를 사용할 때, 이러한 것들은 범위가 정해진 객체를 위한 프록시들을 생성하는데 필수적이다. 이러한 이유는 Scope Beans as Dependencies 에서 묘사되어 있다. 이러한 목적에서, 범위가 지정된 프록시 속성은 Compnent-scan 요소로 이용 가능하다. 3가지의 가능한 값으로는 : `no`, `interfaces`, `targetClass`가 있다. 예로들어, 다음의 configuration은 표준 JDK dynamic proxies를 일으킨다.
+
+```java
+@Configuration
+@ComponentScan(basePackages = "org.example", scopedProxy = ScopedProxyMode.INTERFACES)
+public class AppConfig {
+   // ...
+}
+```
+
+```xml
+<beans>
+	<context:component-scan base-package="org.example" scoped-proxy="interfaces"/>
+</beans>
+```
+
+---
+
+### 1.10.8 Providing Qualifier Metadata with Annotations
+
+`@Qualifier` 애노테이션은 Fine-tuning Annotation-based Autowiring with Qualifiers 에서 논의 되었다. 해당 섹션의 예제에서는 `@Qualifier` 애노테이션과 autowire 후보자를 검색할 때 더 섬세한 제어를 제공하기 위한 사용자 정의 qualifier 애노테이션의 사용에 대해서 설명하였습니다. 이러한 예제들은 XML Bean 정의 기반이였기 때문에, qualifier metadata는 XML의 Bean 요소의 `qualifier` 또는 `meta` 자식요소를 사용함으로써 후보자 Bean 정의를 지원해 주었다. **Component의 자동감지를 위해 classpath 스캔에 의존하는 경우, 개발자는 후보자 클래스에서 타입 계층의 어노테이션과 함께 qualifier metadata를 제공할 수 있습니다.** 다음의 3가지 예제는 이러한 경우를 설명합니다.
+
+```java
+@Component
+@Qualifier("Action")
+public class ActionMovieCatalog implements MovieCatalog{
+   // ...
+}
+```
+
+```java
+@Component
+@Genre("Action")
+public class ActionMovieCatalog implements MovieCatalog {
+    // ...
+}
+```
+
+```java
+@Component
+@Offline
+public class CachingMovieCatalog implements MovieCatalog {
+    // ...
+}
+```
+
+> **대부분의 애노테이션 기반의 대안과 마찬가지로, <u>annotation metadata는 클래스 정의 자체에 바인딩</u> 되어 있다는 것을 명심해야 한다. 반면에 XML의 사용은 자신의 qualifier metadata내에서 변형을 제공하기 위해 동일한 타입의 여러 Bean을 허용합니다.** metadata는 각 class 마다가 아니라 instance마다 제공되어지기 때문입니다.
+
+---
+
+### 1.10.9 Generating an Index of Candidate Components
+
+**classpath scanning은 매우 빠르지만, 컴파일 시간에 후보자의 정적 리스트를 생성함으로써 큰 어플리케이션의 시작 수행능력을 향상 시킬 수 있습니다.** Component Scan의 목표가 되는 모든 모듈들은 이러한 방법을 무조건 사용해야 합니다.
+
+> 기존 `@ComponentScan` 또는 `<context:component-scan>` 지시문은 특정 패키지에서 후보를 스캔하도록 context를 요청하는 것입니다. `ApplicationContext`가 이러한 index를 검색할 때, `ApplicationContext`는 classpath를 스캔하는 것보다 index를 사용한다.
+
+**index를 생성하기 위해, Component 스캔 지시문(directives)의 target인 component를 포함하는 각 모듈에 의존성을 추가하십시요.** 다음의 예제는 어떻게 Maven에서 사용하는지에 대해서 보여준다.
+
+```xml
+<dependencies>
+	<dependency>
+   	<groupId>org.springframework</groupId>
+      <artifactId>spring-context-indexer</artifactId>
+      <version>5.2.3.RELEASE</version>
+      <optional>true</optional>
+   </dependency>
+</dependencies
+```
+
+Gradle의 4.5버전과 이전에는, 의존성은 `compileOnly` 설정에서 선언되어야만 했다. 다음 예제에서 보여준다.
+
+```groovy
+dependencies {
+   compileOnly "org.springframework:spring-context-indexer:5.2.3.RELEASE"
+}
+```
+
+> Gradle 4.6버전 이상부터, 의존성은 `annotationProcessor` 설정에서 정의되어야 한다. 다음의 예제에서 보여준다.
+
+```groovy
+dependencies {
+   annotationProcessor "org.springframework:spring-context-indexer:{spring-version}"
+}
+```
+
+이 프로세스는 jar 파일에 포함된 META-INF/spring.components 파일을 생성합니다.
+
+> IDE에서 이러한 방식으로 작업할때, 후보자 component가 업데이트 될 때 index가 최신상태가 되도록 `spring-context-indexer`를 annotation processor로써 등록해야한다.
+
+> META-INF/spring.components 가 classpath에서 발견되어질 때 index는 자동적으로 활성화됩니다. 만약 index가 여러 라이브라리를 위해서 부분적으로 사용가능하고 전체 어플리케이션을 위해서는 빌드 되어지지 않으려면, 개발자는 일반적인 classpath 배열로 대체할 수 있습니다(인덱스가 전혀 없는 것처럼). 이러한 기능을 사용하기 위해서는 classpath의 root의 `spring.properties`파일 또는 시스템 property에서 `spring.index.ignore`을 `true`로 설정 해야 합니다.
 
 
 
