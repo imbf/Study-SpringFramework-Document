@@ -2,9 +2,78 @@
 
 ## 1.10 Classpath Scanning and Managed Components
 
-Spring Container 내에서 각각의 `BeanDefinition`을 생산하는 configuration metadata를 명시하기 위해 이 **챕터(IoC Container)**의 대부분의 예제는 XML을 사용한다. 이전 챕터(Annotation based configuration) 에서는 어떻게 source 레벨의 애노테이션을 통해서 많은 configuration metadata를 제공하는지에 설명했다. 그러나 이러한 예제에서도 "base" Bean definitions은 XML 파일에 정의되어 있으며, 애노테이션은 오직 의존성 주입에만 사용합니다. 이번 챕터에는 classpath를 스캔함으로써 후보자 components를 암묵적으로 검사하기 위한 옵션에 대해 설명합니다. **후보자 Components는 필터 기준에 일치하고 Container에 등록된 대응하는 Bean 정의가 있는 클래스 입니다.** Bean 등록을 수행하기 위해 XML을 사용하는 요구는 제거됩니다. 대신에, 개발자는 `@Component`와 같은 애노테이션과 AspectJ 타입의 표현식, Container에 등록된 Bean정의를 가진 Class들을 선택하기 위한 사용자 정의 필터 기준등을 사용할 수 있습니다.
+Spring Container 내에서 각각의 `BeanDefinition`을 생산하는 configuration metadata를 명시하기 위해 이 **챕터(IoC Container)**의 대부분의 예제는 XML을 사용한다. 이전 챕터(Annotation based configuration) 에서는 어떻게 source 레벨의 애노테이션을 통해서 많은 configuration metadata를 제공하는지에 설명했다. 그러나 이러한 예제에서도 "base" Bean definitions은 XML 파일에 정의되어 있으며, 애노테이션은 오직 의존성 주입에만 사용합니다. 이번 챕터에는 classpath를 스캔함으로써 후보자 components를 암묵적으로 탐색하기 위한 옵션에 대해 설명합니다. **후보자 Components는 필터 기준에 일치하고 Container에 등록된 대응하는 Bean 정의가 있는 클래스 입니다.** Bean 등록을 수행하기 위해 XML을 사용하는 요구는 제거됩니다. 대신에, **개발자는 `@Component`와 같은 애노테이션과 AspectJ 타입의 표현식, Container에 등록된 Bean정의를 가진 Class들을 선택하기 위한 사용자 정의 필터 기준등을 사용할 수 있습니다.**
 
 > Spring 3.0에서 시작으로, Spring JavaConfig 프로젝트로 부터 제공되어진 많은 기능들은 Spring Framework 핵심 중 일부분이다. 이러한 기능들은 개발자가 전통적인 XML 파일로 Bean을 설정하기 보다는 Java를 사용해서 Bean을 정의할 수 있게끔 해준다. `@Configuration`, `@Bean`, `@Import`, `@DependsOn` 과 같은 에노테이션을 참고해 보아라. 이러한 애노테이션은 어떻게 사용하는지에 대해서는 예제를 통해서 알려줄 것이다.
+
+---
+
+### @Bean vs @Component
+
+#### @Bean
+
+개발자가 컨트롤이 불가능한 외부 라이브러리들을 **Bean**으로 등록하고 싶은 경우에 사용된다.
+
+```java
+@Configuration
+public class ApplicationConfig {
+
+   // 객체를 반환하는 Method 를 만들고 @Bean 어노테이션을 부였다.
+   // Bean 어노테이션에 name을 지정하지 않았음으로 Method 이름을 CamleCase로 변경한 것이 Bean id
+   @Bean
+   public ArrayList<String> arrray() {
+      return new ArrayList<String>();
+   }
+}
+```
+
+**의존 관계가 필요한 경우** : Student 객체의 경우 생성자에서 ArrayList를 주입 받도록 코드를 짜 놓았다. 이럴 때에는 array() 메소드를 호출함으로써 의존성을 주입할 수 있다.
+
+```java
+@Configuration
+public class ApplicationConfig {
+   
+   @Bean
+   public ArrayList<Integer> array(){
+      return new ArrayList<Integer>();
+   }
+   
+   @Bean
+   public Student student() {
+      return new Student(array());
+   }
+}
+```
+
+#### @Component
+
+개발자가 직접 작성한 Class를 **Bean**으로 등록하기 위한 어노테이션이다.
+
+```java
+// 개발자가 사용하기 위해 직접 작성한 Class이다. 이러한 클래스를 Bean으로 등록하기 위해 상단에 @Component 어노테이션을 사용할 수 있다.
+@Component
+public class Student {
+   public Student() {
+      System.out.println("hi");
+   }
+}
+```
+
+```java
+// @Component 역시 아무런 추가 정보가 없다면 Class의 이름을 Camelcase로 변경한 것이 Bean id로 사용된다. 하지만 @Bean과는 다르게 @Component는 name이 아닌 value를 이용하여 Bean의 이름을 지정한다.
+@Component(value="myStudent")
+public class Student {
+   public Student() {
+      S
+   }
+}
+```
+
+**@Bean과 @Component는 각자 선언할 수 있는 타입이 정해져있어 해당 용도외에는 컴파일러 에러를 발생시킨다.**
+
+#### @Configuration
+
+`@Configuration`은 스프링 IoC Conatiner에게 해당 클래스는 Bean configuration class임을 알려주는 것이다.
 
 ---
 
@@ -20,17 +89,17 @@ Spring Container 내에서 각각의 `BeanDefinition`을 생산하는 configurat
 >
 > **what is the stereotype annotation ?** @Component, @Controller, @Service, @Respository
 >
-> 클래스가 다음의 Stereotype 들 중에 하나로 annotated가 되어 있을 때, Spring은 자동적으로 Application Context에 Class들을 등록할 것입니다. 이를 통해 다른 클래스에서 클래스를 의존성 주입에 사용할 수 있게되며 이는 어플리케이션을 빌드하는데 필수적 입니다.
+> <u>클래스가 다음의 Stereotype 들 중에 하나로 annotated가 되어 있을 때, Spring은 자동적으로 Application Context에 Class들을 등록할 것입니다. 이를 통해 다른 클래스에서 클래스를 의존성 주입에 사용할 수 있게되며 이는 어플리케이션을 빌드하는데 필수적 입니다.</u>
 
-**`@Repository`  애노테이션은 저장소(DAO)의 역할 또는 stereotype을 충족시키는 모든 클래스를 위한 마커입니다.** 이 마커의 용도중 하나로 예외 자동변환이 있습니다. 이러한 거들은 Exception Translation에서 묘사되어 집니다.
+**`@Repository`  애노테이션은 저장소(DAO)의 역할 또는 stereotype을 충족시키는 모든 클래스를 위한 marker입니다.** 이 마커의 용도중 하나로 예외 자동변환이 있습니다. 이러한 거들은 Exception Translation(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/data-access.html#orm-exception-translation)에서 묘사되어 집니다.
 
-Spring은 더 많은 stereotype annotations를 지원한다 : `@Component`, `@Service`, `@Controller`, `@Component`는 Spring이 관리하는 Component를 위한 일반적인 stereotype annotation들이다. `@Respository`, `@Service`, `@Controller` 는 보다 구체적인 사용 사례(persistent service, presentation layers, ...)를 위해서 `@Component`를 구체화 시킨것들 입니다. 그러므로 개발자는 자신의 Component class들에게 `@Component` 애노테이션을 달 수 있지만 대신에 `@Repository`, `@Service`, `@Controller` 애노테이션을 달 수 있다. 그러면 class들은 tool 또는 aspect와 관련된 프로세스 처리하기 위해 더 적절하게 된다. 예로들어, 이러한 stereotype annotation들은 pointcuts을 위한 이상적인 대상이 됩니다. `@Respository`, `@Service`, `@Controller`는 미래에 출시될 Spring Framework에 추가적인 의미를 제공합니다. 그러므로 만약 service layer에서 `@Service` 또는  `@Component` 사이에서 어떠한 애노테이션을 사용할지 선택하게 된다면, `@Service` 애노테이션이 보다 더 확실한 선택일 것이다. 비슷하게, 앞에서 언급했듯 `@Respository`는 persistence layer에서 자동 예외 번역을 위한 마커로써 이미 제공되어집니다.
+**Spring은 더 많은 stereotype annotations를 지원한다 : `@Component`, `@Service`, `@Controller`, `@Component`는 Spring이 관리하는 Component를 위한 일반적인 stereotype annotation들이다.** `@Respository`, `@Service`, `@Controller` 는 보다 구체적인 사용 사례(persistent service, presentation layers, ...)를 위해서 `@Component`를 구체화 시킨것들 입니다. **그러므로 개발자는 자신의 Component class들에게 `@Component` 애노테이션을 달 수 있지만 대신에 `@Repository`, `@Service`, `@Controller` 애노테이션을 달 수 있다. 그러면 class들은 tool 또는 aspect와 관련된 프로세스 처리하기 위해 더 적절하게 된다.** 예로들어, 이러한 stereotype annotation들은 pointcuts을 위한 이상적인 대상이 됩니다. `@Respository`, `@Service`, `@Controller`는 미래에 출시될 Spring Framework에 추가적인 의미를 제공합니다. 그러므로 만약 service layer에서 `@Service` 또는  `@Component` 사이에서 어떠한 애노테이션을 사용할지 선택하게 된다면, `@Service` 애노테이션이 보다 더 확실한 선택일 것이다. 비슷하게, 앞에서 언급했듯 `@Respository`는 persistence layer에서 자동 예외 번역을 위한 마커로써 이미 제공되어집니다.
 
 ---
 
 ### 1.10.2 Using Meta-annotations and Composed(구성된) Annotations
 
-**Spring 으로부터 제공되어진 많은 애노테이션들은 meta-annotations로써 사용되어질 수 있습니다. meta-annotation은 다른 애노테이션에 적용되어질 수 있는 에노테이션이다.** 예로들어 이전에 언급되어진  `@Service` 애노테이션은 `@Component`  에 meta-annotated 되어졌다. 다음 예제에서 참고 해 보자.
+**Spring 으로부터 제공되어진 많은 애노테이션들은 meta-annotations로써 사용되어질 수 있습니다. meta-annotation은 다른 애노테이션에 적용되어질 수 있는 애노테이션이다.** 예로들어 이전에 언급되어진  `@Service` 애노테이션은 `@Component`  에 meta-annotated 되어졌다. 다음 예제에서 참고 해 보자.
 
 ```java
 @Target(ElementType.TYPE)
