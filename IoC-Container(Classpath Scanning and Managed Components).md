@@ -252,7 +252,7 @@ public class AppConfig {
 </beans>
 ```
 
-> 개발자는 어노테이션에 `use-default-filters="false"`를 세팅함으로써 또는 `<component-scan/>` 요소 속성에 `use-default-filters="false"`를 제공함으로써 기본 필터를 사용할 수 없게 할 수 있다. 이렇게 하면 실제로 어노테이션 또는 `@Component` , `@Repository`, `@Service`, `@Controller`, `@RestController`, `@configuration` 메타 어노테이션이 있는 클래스의 자동 감지를 사용할 수 없습니다.
+> **개발자는 어노테이션에 `use-default-filters="false"`를 세팅함으로써 또는 `<component-scan/>` 요소 속성에 `use-default-filters="false"`를 제공함으로써 기본 필터를 사용할 수 없게 할 수 있다.** 이렇게 하면 실제로 어노테이션 또는 `@Component` , `@Repository`, `@Service`, `@Controller`, `@RestController`, `@configuration` 메타 어노테이션이 있는 클래스의 자동 감지를 사용할 수 없습니다.
 
 ---
 
@@ -293,11 +293,11 @@ public class FactoryMethodComponent {
       return new TestBean("publicInstance");
    }
    
-   // 사용자 qualifier의 사용 과 메소드 인자들의 autowiring
+   // 사용자 qualifier의 사용과 메소드 인자들의 autowiring
    @Bean
    protected TestBean protectedInstance(@Qualifier("public") TestBean spouse,
                                        @Value("#{privateInstance.age}") String country){
-      TestBean tb = new TEstBean("protectedInstance", 1);
+      TestBean tb = new TestBean("protectedInstance", 1);
       tb.setSpouse(spouse);
       tb.SetCountry(country);
       return tb;
@@ -337,19 +337,19 @@ public class FactoryMethodComponent {
 >
 > 정적인 `@Bean` 메소드들을 호출하는 것은 기술적인 한계로 인해  `@Configuration` 클래스(이전 섹션에서 설명) 내에서 조차도 Container에 의해서 가로막히지 않습니다. GGLIB 서브클래스는 non-static 메소드들만 오버라이드 할 수 있다. **결과적으로, `@Bean` 메소드들의 직접적인 호출은 표준 Java semantics를 가지고, 독립 인스턴스가 팩토리 메소드 자체에서 직접 리턴됩니다.**
 >
-> `@Bean` 메소드들의 Java 언어 가시성은 Spring Container 결과 Bean 정의에 즉각적인 영향을 미치지 않습니다. 개발자는 팩토리 메소드를 non-@Confiugration 클래스에 선언할 수 있고 정적 메소드에 대해서도 팩토리 메소드를 자유롭게 선언할 수 있다. 그러나 `@Configuration` 클래스 내의 일반적인 `@Bean` 메소드들은 오버라이드가 필요하다. - 즉, 그들은 `private` 또는 `final` 로써 선언되면 안된다.
+> `@Bean` 메소드들의 Java 언어 가시성은 Spring Container Bean 정의 결과에 즉각적인 영향을 미치지 않습니다. 개발자는 팩토리 메소드를 non-`@Confiugration` 클래스에 선언할 수 있고 정적 메소드에 대해서도 팩토리 메소드를 자유롭게 선언할 수 있다. 그러나 `@Configuration` 클래스 내의 일반적인 `@Bean` 메소드들은 오버라이드가 필요하다. - 즉, 그들은 `private` 또는 `final` 로써 선언되면 안된다.
 >
 > `@Bean` 메소드들은 주어진 component 또는 configuration 클래스의 base 클래스 에서 발견되어질 뿐만 아니라 component 또는 configuration 클래스로부터 구현되어진 interface에 선언되어진 Java 8 기본 메소드들에서 발견됩니다. Spring 4.2 부터, 이러한 사실은 Java 8 기본 메소드들을 통해서 다중 상속이 가능한 복잡한 configuration 구성에서 많은 융통성을 가질 수 있게 합니다.
 >
-> 결과적으로, 단일 클래스는 런타임시에 이용가능한 의존성에 따라 사용할 여러 팩토리 메소드 배열로서 동일한 Bean에 대해 여러 `@Bean` 메소드를 보유 할 수 있습니다. 이러한 사실은 다른 configuration 시나리오에서 가장 탐욕적인 생성자 또는 팩토리 메소드를 고르는 것과 같은 알고리즘 입니다. 구성 시간에 만족할 수 있는 의존성 수가 가장 많은 변형이 선택됩니다. Container가 여러개의 `@Autowired` 생성자 중에서 선택하는 방식과 유사하게끔
+> 결과적으로, 단일 클래스는 런타임시에 이용가능한 의존성에 따라 사용할 여러 팩토리 메소드 배열로서 동일한 Bean에 대해 여러 `@Bean` 메소드를 보유 할 수 있습니다. 이러한 사실은 다른 configuration 시나리오에서 가장 탐욕적인 생성자 또는 팩토리 메소드를 고르는 것과 같은 알고리즘 입니다. 구성 시간에 만족할 수 있는 의존성 수가 가장 많은 변형(variant)이 선택됩니다. Container가 여러개의 `@Autowired` 생성자 중에서 선택하는 방식과 유사하게끔
 
 ---
 
 ### 1.10.6 Naming Autodetected Components 
 
-**Scanning process의 부분으로써 Component가 자동 탐색될 때, Component의 Bean name은 해당 Scanner에 알려진 `BeanNameGenerator` 전략에 의해서 생성되어진다.** 기본적으로, name `value`를 포함하는 Spring stereotype 애노테이션(`@Component`, `@Repository`, `@Service`, `@Controller`) 해당 Bean 정의에 해당 name을 제공합니다.
+**Scanning process의 부분으로써 Component가 자동 탐색될 때, Component의 Bean name은 해당 Scanner에 알려진 `BeanNameGenerator` 전략에 의해서 생성되어진다.** **기본적으로, name `value`를 포함하는 Spring stereotype 애노테이션(`@Component`, `@Repository`, `@Service`, `@Controller`) 해당 Bean 정의에 해당 name을 제공합니다.**
 
-만약 이러한 애노테이션들이 name `value`를 가지고 있지 않거나, 모든 탐색된 Component(사용자 필터에 의해서 발견된 것)에 대한 name `value` 값을 포함하고 있지 않은 경우, 기본 Bean name 생성기는 대문자로 규정되지 않는 non-qualified class name을 리턴할 것이다. 예로들어, 다음의 component 클래스가 탐색되었다면, name은 `myMovieLister` 과 `movieFinderImpl`이 될것이다.
+만약 이러한 애노테이션들이 name `value`를 가지고 있지 않거나, 모든 탐색된 Component(사용자 필터에 의해서 발견된 것)에 대한 name `value` 값을 포함하고 있지 않은 경우, 기본 Bean name 생성기는 대문자로 규정되지 않는 non-qualified class name(camelCase)을 리턴할 것이다. 예로들어, 다음의 component 클래스가 탐색되었다면, name은 `myMovieLister` 과 `movieFinderImpl`이 될것이다.
 
 ```java
 @Service("myMovieLister")
@@ -389,7 +389,7 @@ public class AppConfig {
 
 ### 1.10.7 Providing a Scope for Autodetected Components
 
-일반적으로 Spring이 관리하는 component와 같이, 자동 탐색된 Component를 위한 가장 일반적이고 기본 범위는 `Singleton` 이다. 그러나, 때때로 개발자는 `@Scope` annotation에 명시되어질 수 있는 또 다른 scope가 필요하다. 개발자는 애노테이션안에 scope의 name을 제공할 수 있다. 다음 예제에서 보여준다.
+**일반적으로 Spring이 관리하는 component와 같이, 자동 탐색된 Component를 위한 가장 일반적이고 기본 범위는 `Singleton` 이다.** 그러나, 때때로 개발자는 `@Scope` annotation에 명시되어질 수 있는 또 다른 scope가 필요하다. 개발자는 애노테이션안에 scope의 name을 제공할 수 있다. 다음 예제에서 보여준다.
 
 ```java
 @Scope("prototype")
@@ -401,7 +401,7 @@ public class MovieFinderImpl implements MovieFinder {
 
 > **`@Scope` 애노테이션은 오직 구체적인 Bean class(`component` 애노테이션이 붙은) 또는 팩토리 메소드 (`@Bean` 메소드 )에서만 검사됩니다.** XML Bean 정의와는 대조적으로, Bean 정의 상속에 대한 개념은 없으며, 클래스 레벨의 상속 계층은 metadata 목적과 관련이 없습니다.
 
-구체적으로 Spring Context 내의 web-specific 범위인 request 또는 session에 대한 정보는 Request, Session, Application, WebSocket Scopes를 참고해 보아라. **이러한 범위를 위해 미리 빌드된 애노테이션과 마찬가지로, 개발자는 자신의 scoping 애노테이션을 Spring meta-annotation 접근을 사용해서 구성할 수 있습니다.** 예로들어, `@Scope("prototype")` 으로 메타 주석이 달린 사용자 정의 주석은 사용자 정의 프록시 모드를 선언할 수도 있습니다.
+구체적으로 Spring Context 내의 web-specific 범위인 request 또는 session에 대한 정보는 Request, Session, Application, WebSocket Scopes를 참고해 보아라. **이러한 범위를 위해 미리 빌드된 애노테이션과 마찬가지로, 개발자는 자신의 scoping 애노테이션을 Spring meta-annotation 접근을 사용해서 구성할 수 있습니다.** 예로들어, `@Scope("prototype")` 으로 메타 주석이 달린 사용자 정의 주석은 사용자 정의 프록시 방식(mode)을 선언할 수도 있습니다.
 
 > **애노테이션 기반의 접근법에 의존하는 것 보다는 범위 해결을 위한 사용자 정의 전략을 제공하기 위해, 개발자는 `ScopeMetadataResolver` 인터페이스를 구현할 수 있습니다. 인자가 없는 기본 생성자를 포함해야 합니다.** 그러면 Scanner를 설정할 때 완전히 qualified된 클래스를 제공할 수 있습니다. 다음의 예제는 애노테이션과 Bean 정의에 대해서 보여줍니다.
 
