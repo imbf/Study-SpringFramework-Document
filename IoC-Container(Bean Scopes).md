@@ -207,17 +207,17 @@ AOP는 문제를 해결하기 위한 핵심 관심 사항과 전체에 적용되
 
 #### Scoped Beans as Dependencies (개어렵다 진짜 다시 공부해야한다.!!!!)
 
-Spring IoC Container는 Bean의 인스턴스화를 관리하는 것 뿐만 아니라 의존성(collaboraotrs)을 wiring 해주는 것까지 관리한다. 만약 개발자가 HTTP resquest-scoped Bean을 더 긴 수명을 갖는 범위의 Bean에게 주입하고 싶다면, 개발자는 AOP proxy를 범위가 지정된 Bean 대신에(in place of) 주입해야한다. 즉, 개발자는 프록시 객체를 주입해야 합니다. 프록시 객체는 실제 target 객체를 관련된 범위로부터 검색할 수 있고 메소드 호출을 실제 객체에 위임할 수 있는 범위의 객체로서 동일한 공용 인터페이스를 노출시킨다.
+Spring IoC Container는 Bean의 인스턴스화를 관리하는 것 뿐만 아니라 의존성(collaboraotrs)을 wiring 해주는 것까지 관리한다**. 만약 개발자가 HTTP resquest-scoped Bean을 더 긴 수명을 갖는 범위의 Bean에게 주입하고 싶다면, 개발자는 AOP proxy를 범위가 지정된 Bean 대신에(in place of) 주입해야한다.** 즉, 개발자는 프록시 객체를 주입해야 합니다. 프록시 객체는 실제 target 객체를 관련된 범위로부터 검색할 수 있고 메소드 호출을 실제 객체에 위임할 수 있는 범위의 객체로서 동일한 공용 인터페이스를 노출시킨다.
 
-> 개발자는 singleton 으로써 범위가 지정된 Bean간의 \<aop:scoped-proxy/>를 사용할 수 있으며, 참조는 직렬화 가능한 중간 프록시를 통과하고 따라서 직렬화 해제시 target singleton Bean을 재확보할 수 있습니다.
+> 개발자는 `singleton` 으로써 범위가 지정된 Bean간의 `\<aop:scoped-proxy/>`를 사용할 수 있으며, 참조는 직렬화 가능한 중간 프록시를 거치므로 따라서 직렬화 해제시 target singleton Bean을 재확보할 수 있습니다.
 >
-> prototype 범위의 bean에 대해서 \<aop:scoped-proxy/>를 선언할 때, 모든 메소드는 호출이 전달(forward)되는 새로운 target 인스턴스의 생성을 발생하는 공유 프록시를 호출한다.
+> `prototype` 범위의 bean에 대해서 `\<aop:scoped-proxy/>`를 선언할 때, 모든 메소드는 호출이 전달(forward)되는 새로운 target 인스턴스의 생성을 발생하는 공유 프록시를 호출한다.
 >
-> 또한 범위가 지정된 프록시는 라이프 사이클이 안전한 방식으로 짧은 범위의 Bean에 액세스 할 수 있는 유일한 방법은 아닙니다. 개발자는 ObjectFactory\<MyTargetBean>으로써 injection point(즉, 생성자 또는 setter의 인자, autowired 필드)를 선언할 수 있다. 필요할 때마다 필요에 따라 현재의 인스턴스를 검색 할 수 있도록 getObject() 호출을 가능하게 한다. 인스턴스를 유지하거나 또는 이것을 별도로 저장하지 않고도 getObject 호출로써 가능하다.
+> 또한 범위가 지정된 프록시는 라이프 사이클이 안전한 방식으로 짧은 범위의 Bean에 액세스 할 수 있는 유일한 방법은 아닙니다. 개발자는 `ObjectFactory\<MyTargetBean>`으로써 injection point(즉, 생성자 또는 setter의 인자, autowired 필드)를 선언할 수 있다. 필요할 때마다 필요에 따라 현재의 인스턴스를 검색 할 수 있도록 `getObject()` 호출을 가능하게 한다. 인스턴스를 유지하거나 또는 이것을 별도로 저장하지 않고도 getObject 호출로써 가능하다.
 >
-> 확장 변형으로 getIfAvailable 과 getIfUnique를 포함한 몇가지의 추가적인 접근 변형을 제공(deliver)하는 ObjectProvider\<MyTargetBean>를 선언할 수 있습니다.
+> 확장 변형으로 `getIfAvailable` 과 `getIfUnique를` 포함한 몇가지의 추가적인 접근 변형을 제공(deliver)하는 `ObjectProvider\<MyTargetBean>`를 선언할 수 있습니다.
 >
-> Provider라고 불리우는 JSR-330 변형은 Provider\<MyTargetBean> 선언과 모든 검색 시도를 위한 get() 메소드의 호출을 위해 사용되어진다. 좀 더 많은 정보를 원한다면 JSR-330 overall을 참고해 보자.
+> `Provider라고` 불리우는 JSR-330 변형은 `Provider\<MyTargetBean>` 선언과 모든 검색 시도를 위한 `get()` 메소드의 호출을 위해 사용되어진다. 좀 더 많은 정보를 원한다면 JSR-330 overall을 참고해 보자.
 
 다음 예제의 configuration은 단 한줄이지만, 그 뒤에 존재하는 방법 뿐만 아니라 이유를 하는것이 매우 중요하다.
 
@@ -261,10 +261,10 @@ Spring IoC Container는 Bean의 인스턴스화를 관리하는 것 뿐만 아�
 
 이전의 예제에서, Singleton Bean(userManager)는 HTTP Session scoped Bean(userPreferences) 참조가 주입되었다. 여기서의 중요한(salient) 포인트는 userManager Bean이 singleton이라는 것이다. 이것은 Container마다 확실히 한번만 인스턴스화 되고, 이것의 의존성( 이번 경우에는 userPreferences Bean ) 은 오직 한번만 의존성 주입되어진다. 이러한 것들은 userManager Bean이 정확히 동일한 userPreferences 오브젝트(즉, 원래 주입 된 오브젝트)에서만 작동함을 의미합니다.
 
-짧은 수명의 범위를 가진 Bean을 긴 수명의 범위를 가진 Bean에 주입할 때 개발자가 원하는 행동이 아니다.
-(예로들어, HTTP Session 범위의 collaborating Bean을 의존성으로 singleton Bean에 주입) 오히려, 개발자는 단일의 userManager 객체 필요로하며, HTTP Session 수명주기 동안 HTTP Session과 관련된 userPreferences 객체가 필요합니다. 따라서, Container는 범위 지정 메커니즘(HTTP request, Session, ...)으로부터 실제 UserPreferences 객체를 가져올(Fetch) 수 있는 UserPreferences 클래스와 정확히 동일한 공용 인터페이스(이상적으로 UserPreferences 인스턴스인 객체)를 노출하는 객체를 만듭니다. Container는 proxy 객체를 userManager Bean에 주입한다. userManager Bean은 UserPreferences 참조가 프록시 라는 것을 알지 못한다. 이러한 예제에서, UserManager 인스턴스가 UserPreferences 객체의 의존성이 주입된 method를 호출할 때, UserManager는 실제로 프록시에서 이러한 메소드를 호출한다. 프록시는 실제 UserPreferences 객체를 HTTP Session으로부터 가져오고, 메소드 호출을 검색된 실제 UserPreferences 객체로(onto) 위임한다.
+짧은 수명의 범위를 가진 Bean을 긴 수명의 범위를 가진 Bean에 주입할 때 개발자가 원하는 동작이 아니다.
+(예로들어, HTTP Session 범위의 collaborating Bean을 의존성으로 singleton Bean에 주입) 오히려, 개발자는 단일의 userManager 객체 필요로하며, HTTP Session 수명주기 동안 HTTP Session과 관련된 userPreferences 객체가 필요합니다. 따라서, Container는 범위 지정 메커니즘(HTTP request, Session, ...)으로부터 실제 UserPreferences 객체를 가져올(Fetch) 수 있는 UserPreferences 클래스와 정확히 동일한 공용 인터페이스(이상적으로 UserPreferences 인스턴스인 객체)를 노출하는 객체를 만듭니다. **Container는 proxy 객체를 userManager Bean에 주입한다. userManager Bean은 UserPreferences 참조가 프록시 라는 것을 알지 못한다.** 이러한 예제에서, UserManager 인스턴스가 UserPreferences 객체의 의존성이 주입된 method를 호출할 때, **UserManager는 실제로 프록시에서 이러한 메소드를 호출한다.** 프록시는 실제 UserPreferences 객체를 HTTP Session으로부터 가져오고, 메소드 호출을 검색된 실제 UserPreferences 객체로(onto) 위임한다.
 
-따라서 개발자는 request 와 session 범위의 Bean을 collaborating objects에 주입할 때 다음(올바르고 완전한)과 같은 configuration이 필요합니다. 
+**따라서 개발자는 request 와 session 범위의 Bean을 collaborating objects에 주입할 때 다음(올바르고 완전한)과 같은 configuration이 필요합니다.** 
 
 ```xml
 <bean id="userPreferences" class="com.something.userPreferences" scope="session">
