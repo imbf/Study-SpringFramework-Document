@@ -12,7 +12,7 @@ Spring Container 내에서 각각의 `BeanDefinition`을 생산하는 configurat
 
 #### @Bean
 
-개발자가 컨트롤이 불가능한 외부 라이브러리들을 **Bean**으로 등록하고 싶은 경우에 사용된다.
+**개발자가 컨트롤이 불가능한 외부 라이브러리들을 Bean으로 등록**하고 싶은 경우에 사용된다.
 
 ```java
 @Configuration
@@ -40,17 +40,18 @@ public class ApplicationConfig {
    
    @Bean
    public Student student() {
-      return new Student(array());
+      return new Student(array()); // array() 메소드 호출
    }
 }
 ```
 
 #### @Component
 
-개발자가 직접 작성한 Class를 **Bean**으로 등록하기 위한 어노테이션이다.
+**개발자가 직접 작성한 Class를 Bean으로 등록**하기 위한 어노테이션이다.
 
 ```java
-// 개발자가 사용하기 위해 직접 작성한 Class이다. 이러한 클래스를 Bean으로 등록하기 위해 상단에 @Component 어노테이션을 사용할 수 있다.
+// 개발자가 사용하기 위해 직접 작성한 Class이다.
+// 이러한 클래스를 Bean으로 등록하기 위해 상단에 @Component 어노테이션을 사용할 수 있다.
 @Component
 public class Student {
    public Student() {
@@ -60,7 +61,8 @@ public class Student {
 ```
 
 ```java
-// @Component 역시 아무런 추가 정보가 없다면 Class의 이름을 Camelcase로 변경한 것이 Bean id로 사용된다. 하지만 @Bean과는 다르게 @Component는 name이 아닌 value를 이용하여 Bean의 이름을 지정한다.
+// @Component 역시 아무런 추가 정보가 없다면 Class의 이름을 Camelcase로 변경한 것이 Bean id로 사용된다.
+// 하지만 @Bean과는 다르게 @Component는 name이 아닌 value를 이용하여 Bean의 이름을 지정한다.
 @Component(value="myStudent")
 public class Student {
    public Student() {
@@ -392,22 +394,24 @@ public class AppConfig {
 **일반적으로 Spring이 관리하는 component와 같이, 자동 탐색된 Component를 위한 가장 일반적이고 기본 범위는 `Singleton` 이다.** 그러나, 때때로 개발자는 `@Scope` annotation에 명시되어질 수 있는 또 다른 scope가 필요하다. 개발자는 애노테이션안에 scope의 name을 제공할 수 있다. 다음 예제에서 보여준다.
 
 ```java
-@Scope("prototype")
+@Scope("prototype") // scope의 name을 제공하는 예제이다.
 @Repository
 public class MovieFinderImpl implements MovieFinder {
    // ...
 }
 ```
 
-> **`@Scope` 애노테이션은 오직 구체적인 Bean class(`component` 애노테이션이 붙은) 또는 팩토리 메소드 (`@Bean` 메소드 )에서만 검사됩니다.** XML Bean 정의와는 대조적으로, Bean 정의 상속에 대한 개념은 없으며, 클래스 레벨의 상속 계층은 metadata 목적과 관련이 없습니다.
+> <u>**`@Scope` 애노테이션은 오직 구체적인 Bean class(`component` 애노테이션이 붙은) 또는 팩토리 메소드 (`@Bean` 메소드 )에서만 검사됩니다.**</u> XML Bean 정의와는 대조적으로, Bean 정의 상속에 대한 개념은 없으며, 클래스 레벨의 상속 계층은 metadata 목적과 관련이 없습니다.
 
 구체적으로 Spring Context 내의 web-specific 범위인 request 또는 session에 대한 정보는 Request, Session, Application, WebSocket Scopes를 참고해 보아라. **이러한 범위를 위해 미리 빌드된 애노테이션과 마찬가지로, 개발자는 자신의 scoping 애노테이션을 Spring meta-annotation 접근을 사용해서 구성할 수 있습니다.** 예로들어, `@Scope("prototype")` 으로 메타 주석이 달린 사용자 정의 주석은 사용자 정의 프록시 방식(mode)을 선언할 수도 있습니다.
 
-> **애노테이션 기반의 접근법에 의존하는 것 보다는 범위 해결을 위한 사용자 정의 전략을 제공하기 위해, 개발자는 `ScopeMetadataResolver` 인터페이스를 구현할 수 있습니다. 인자가 없는 기본 생성자를 포함해야 합니다.** 그러면 Scanner를 설정할 때 완전히 qualified된 클래스를 제공할 수 있습니다. 다음의 예제는 애노테이션과 Bean 정의에 대해서 보여줍니다.
+> **애노테이션 기반의 접근법에 의존하는 것 보다 범위 해결을 위한 사용자 정의 전략을 제공하기 위해, 개발자는 `ScopeMetadataResolver` 인터페이스를 구현할 수 있습니다. 인자가 없는 기본 생성자를 포함해야 합니다.** 그러면 Scanner를 설정할 때 완전히 qualified된 클래스를 제공할 수 있습니다. 다음의 예제는 애노테이션과 Bean 정의에 대해서 보여줍니다.
 
 ```java
+// @Configuration이 붙은 설정 클래스에 @ComponentScan 애노테이션을 붙여야 한다.
+
 @Configuration
-@ComponentScan(basePackages = "org.example", scopeResolver = MyScopeResolver.class)
+@ComponentScan(basePackages = "org.example", scopeResolver = MyScopeResolver.class) 
 public class AppConfig{
    // ...
 }
@@ -466,14 +470,16 @@ public class CachingMovieCatalog implements MovieCatalog {
 ```
 
 > **대부분의 애노테이션 기반의 대안과 마찬가지로, <u>annotation metadata는 클래스 정의 자체에 바인딩</u> 되어 있다는 것을 명심해야 한다. 반면에 XML의 사용은 자신의 qualifier metadata내에서 변형을 제공하기 위해 동일한 타입의 여러 Bean을 허용합니다.** metadata는 각 class 마다가 아니라 instance마다 제공되어지기 때문입니다.
+>
+> **인스턴스마다 동일한 타입의 여러 Bean이 제공되어 지면 qualifier metadata내에서 변형을 제공한다.**
 
 ---
 
 ### 1.10.9 Generating an Index of Candidate Components
 
-**classpath scanning은 매우 빠르지만, 컴파일 시간에 후보자의 정적 리스트를 생성함으로써 큰 어플리케이션의 시작 수행능력을 향상 시킬 수 있습니다.** Component Scan의 목표가 되는 모든 모듈들은 이러한 방법을 무조건 사용해야 합니다.
+**classpath scanning은 매우 빠르지만, 컴파일 시간에 후보자의 정적 리스트를 생성함으로써 큰 어플리케이션의 시작능력을 향상 시킬 수 있습니다.** Component-Scan의 목표가 되는 모든 모듈들은 이러한 방법을 무조건 사용해야 합니다.
 
-> 기존 `@ComponentScan` 또는 `<context:component-scan>` 지시문은 특정 패키지에서 후보를 스캔하도록 context를 요청하는 것입니다. `ApplicationContext`가 이러한 index를 검색할 때, `ApplicationContext`는 classpath를 스캔하는 것보다 index를 사용한다.
+> 기존 `@ComponentScan` 또는 `<context:component-scan>` 지시문은 특정 패키지에서 후보를 스캔하도록 context를 요청하는 것입니다. **`ApplicationContext`가 이러한 index를 검색할 때, `ApplicationContext`는 classpath를 스캔하는 것보다 index를 사용한다.**
 
 **index를 생성하기 위해, Component 스캔 지시문(directives)의 target인 component를 포함하는 각 모듈에 의존성을 추가하십시요.** 다음의 예제는 어떻게 Maven에서 사용하는지에 대해서 보여준다.
 
@@ -504,41 +510,8 @@ dependencies {
 }
 ```
 
-이 프로세스는 jar 파일에 포함된 META-INF/spring.components 파일을 생성합니다.
+**이 프로세스는 jar 파일에 포함된 META-INF/spring.components 파일을 생성합니다.**
 
-> IDE에서 이러한 방식으로 작업할때, 후보자 component가 업데이트 될 때 index가 최신상태가 되도록 `spring-context-indexer`를 annotation processor로써 등록해야한다.
+> **IDE에서 이러한 방식으로 작업할때, 후보자 component가 업데이트 될 때 index가 최신상태가 되도록 `spring-context-indexer`를 annotation processor로써 등록해야한다.**
 
-> META-INF/spring.components 가 classpath에서 발견되어질 때 index는 자동적으로 활성화됩니다. 만약 index가 여러 라이브라리를 위해서 부분적으로 사용가능하고 전체 어플리케이션을 위해서는 빌드 되어지지 않으려면, 개발자는 일반적인 classpath 배열로 대체할 수 있습니다(인덱스가 전혀 없는 것처럼). 이러한 기능을 사용하기 위해서는 classpath의 root의 `spring.properties`파일 또는 시스템 property에서 `spring.index.ignore`을 `true`로 설정 해야 합니다.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+> **META-INF/spring.components 가 classpath에서 발견되어질 때 index는 자동적으로 활성화됩니다.** 만약 index가 여러 라이브라리를 위해서 부분적으로 사용가능하고 전체 어플리케이션을 위해서는 빌드 되어지지 않으려면, 개발자는 일반적인 classpath 배열로 대체할 수 있습니다(인덱스가 전혀 없는 것처럼). 이러한 기능을 사용하기 위해서는 classpath의 root의 `spring.properties`파일 또는 시스템 property에서 `spring.index.ignore`을 `true`로 설정 해야 합니다.
