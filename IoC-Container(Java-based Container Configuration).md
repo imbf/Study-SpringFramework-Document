@@ -334,7 +334,397 @@ public class AppConfig {
 > }
 > ```
 >
-> 또한 `@Bean` 메소드에서, 개발자는 일반적으로 프로그램적인 JNDI 검색을 사용할 수 있습니다. Spring의 `JndiTemplate` 또는 `JndiLocatorDelegate` helpers 또는 straight JNDI `InitialContext` 사용함으로써 
+> 또한 `@Bean` 메소드에서, 개발자는 일반적으로 프로그램적인 JNDI 검색을 사용할 수 있습니다. Spring의 `JndiTemplate` 또는 `JndiLocatorDelegate` helpers 또는 straight JNDI `InitialContext` 를 사용함으로써 프로그램적인 JNDI 검색을 사용할 수있습니다. `JndiObjectFactoryBean` 변형을 사용하지 않는다. `JndiObjectFactoryBean` 은  실제 target 타입 대신에 `FactoryBean` 타입으로써 리턴타입을 선언하도록 강요한다. 이러한 것들을 사용하면 제공된 리소스를 참조하려는 다른 `@Bean` 메소드에서 상호 참조 호출을 사용하기가 더 어려워 진다.
+
+이전에 작성된 예제의 `BeanOne`의 경우, 생성자 내에서 직접적으로 `init()` 메소드를 호출하는 것과 동일하다. 다음 예제에서 보여준다.
+
+```java
+@Configuration
+public class AppConfig {
+   
+   @Bean
+   public BeanOne beanOne() {
+      BeanOne beanOne = new BeanOne();
+      beanOne.init();
+      return beanOne;
+   }
+   
+   // ...
+}
+```
+
+자바에서 직접적으로 작업을 할 때, 개발자는 객체와 함께 자신이 원하는 작업을 할 수 있고, 항상 Container lifecycle에 의존할 필요가 없습니다.
+
+#### Specifying Bean Scope
+
+Spring은 Bean의 Scope를 명시할 수 있도록 하기 위해서 `@Scope` 애노테이션을 지원합니다.
+
+#### Using the `@Scope` Annotation
+
+**개발자는 `@Bean` 애노테이션으로 정의 되어진 Bean을 특정한 범위를 가지도록 정의할 수 있습니다.** 
+개발자는 Bean Scopes(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/core.html#beans-factory-scopes) 섹션에 명시되어있는 표준 범위 모두를 사용할 수 있습니다.
+
+기본 범위는 `singleton` 이지만, 개발자는 이러한 범위를 `@Scope` 애노테이션을 사용해서 오버라이드할 수 있습니다.
+다음 예제에서 보여줍니다.
+
+```java
+@Configuration
+public class MyConfiguration {
+   
+   @Bean
+   @Scope("prototype")
+   public Encryptor encryptor() {
+		// ...
+   }
+}
+```
+
+#### `@Scope` 또는 `scoped-proxy`
+
+**Spring은 scoped-proxy(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/core.html#beans-factory-scopes-other-injection)를 통해서 범위가 정해진 의존성의 작업의 편리한 방법을 제공 해 준다.** XML configuration을 사용할 때 proxy를 생성하는 가장 쉬운 방법은 `<aop:scoped-proxy/>` 요소이다. 자바에서 `@Scope` 애노테이션과 함께 Bean을 설정하는 것은 `proxyMode` 속성으로 동등한 지원(XML configuration과)을 제공한다. 기본값은 no proxy(`ScopedProxyMode.NO`)이고 하지만 개발자는 `ScopedProxyMode.TARGET_CLASS` 또는 `ScopedProxyMode.INTERFACES`를 명시할 수 있습니다.
+
+만약 범위가 정해진 프록시 예제를 XML reference documentation에서 자바에서 사용하는  `@Bean` 으로 복사(port)한다면, 이러한 것들은 다음과 닮을 것입니다.
+
+```java
+// an HTTP Session-scoped Bean exposed as a proxy
+@Bean
+@SessionScope
+public UserPreference userPreferences() {
+   return new UserPreference
+}
+
+@Bean
+public Service userService() {
+   UserService service = new SimpleUserService();
+   // 프록시된 userPreferences Bean 참조
+   service.setUserPreferences(userPreferences());
+   return service;
+}
+```
+
+#### Customizing Bean Naming
+
+**기본적으로, configuration class들은 Bean 결과의 name으로써 `@Bean` 메소드의 name을 사용한다.** 그러나 이러한 기능은 다음 예제에서 보여준 대로 name 속성과 함께 override 될 수 있다.
+
+```java
+@Configuration
+public class AppConfig {
+   
+   @Bean(name = "myThing") //Bean의 name은 myThing이다.
+   public Thing thing() {
+      return new Thing();
+   }
+}
+```
+
+#### Bean Aliasing(별명)
+
+**Naming beans에서 논의되어진 것 처럼, 단일 Bean에 여러 name을 지정하는 것이 때때로 바람직 하며, Bean Aliasing(Bean 별명) 이라고 부르기도 합니다.** `@Bean` 어노테이션의 `name` 속성은 이러한 목적에서 String 배열을 수용한다. 다음의 예제에서는 단일 Bean을 위해 많은 별명들을 설정하는 방법에 대해서 보여준다.
+
+```java
+@Configuration
+public class AppConfig {
+   
+   @Bean({"dataSource", "subsystemA-dataSource", "subsystemB-dataSource"})
+   public DataSource dataSource() {
+      // DataSource Bean을 인스턴스화, 설정, 리턴하는 Code가 위치해야 한다.
+   }
+}
+```
+
+#### Bean Description
+
+**때때로, 단일 Bean의 디테일한 텍스트형식의 설명을 제공하는것이 도움이 될 때가 있다.** 이는 모니터링 목적으로 Bean이 (JMX를 통해) 노출 될 때 특히 유용할 수 있습니다.
+
+단일 `@Bean`에 설명을 추가하기 위해서, 개발자는 `@Description` 애노테이션을 추가할 수 있다. 다음 예제에서 보여준다.
+
+```java
+@Configuration
+public class AppConfig {
+
+	@Bean
+   @Description("Provides a basic example of a bean")
+   public Thing thing(){
+      return new Thing();
+   }
+}
+```
+
+---
+
+### 1.12.4 Using the `@Configuration` annotation
+
+**`@Configuration`은 Bean 정의에 대한 소스인 객체를 가리키는 클래스 레벨의 애노테이션이다. `@Configuration` 클래스들은 `@Bean` 애노테이션이 붙은 public methods를 통해서 Bean을 선언한다. `@Configuration` 클래스들의 `@Bean` 메소드들을 호출하는 것은 inter-bean dependencies를 정의하는데 사용되어질 수 있습니다.** 더 일반적인 정보를 얻고 싶다면
+Basic Concepts : @Bean and @Configuration(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/core.html#beans-java-basic-concepts)을 참고 해 보자.
+
+#### Injecting Inter-bean Dependencies
+
+Bean이 또 다른 Bean의 의존성을 가지고 있다면, 의존성의 표현하는 것은 하나의 Bean 메소드가 다른것을 호출하는 것처럼 간단합니다. 다음 예제에서 보여줍니다.
+
+```java
+@Configuration
+public class AppConfig {
+
+	@Bean
+	public BeanOne beanOne(){
+		return new BeanOne(beanTwo());
+	}
+   
+   @Bean
+   public BeanTwo beanTwo(){
+      return new BeanTwo();
+   }
+}
+```
+
+이전 예제에서, `beanOne`은 생성자 인자를 통해 `beanTwo` 참조를 수용합니다.
+
+> **inter-bean dependencies를 선언하는 메소드는 오직 `@Bean`메소드가 `@Configuration` 클래스 내에 선언되어졌을 때에만 동작한다. 개발자는 inter-bean dependencies를 기본적인 `@Component` 클래스를 사용함으로써 선언할 수 없다.**
+
+#### Lookup Method Injection
+
+이전에 언급했듯이, **lookup method injection**(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/core.html#beans-factory-method-injection)는 개발자가 드물게 사용하는 발전된 기능이다. **이러한 기능은 singleton 범위의 Bean이 prototype 범위의 Bean 의존성을 가질 때 유용하게 사용된다.** 이러한 타입의 configuration을 위해서 자바를 사용하는 것은 이러한 패턴을 구현하기 위한 많은 방법을 제공 해 준다. 다음 예제는 어떻게 lookup 메소드 주입을 사용하는지에 보여주는 예제이다.
+
+```java
+public abstract class CommandManager {
+   public Object process(Object commandState) {
+      // 적절한 Command 인터페이스의 새로운 인스턴스를 가져옵니다.
+      Command command = createCommand();
+      // Command instance에 상태 설정
+      command.setState(commandState);
+      return command.execute();
+   }
+   
+   // okay.. 어디서 이러한 메소드를 구현하지?
+   protected abstract Command createCommand();
+   
+}
+```
+
+**Java configuration을 사용함으로써, 개발자는 `CommandManger`의 서브클래스를 abstract `createCommand()` 메소드가 오버라이드 되어지는 곳에 생성할 수 있다. abstract `createCommand()` 메소드는 새로운 (prototype) command 객체를 찾습니다**. 다음 예제에서 어떻게 이러한 것들을 사용하는지에 대해서 알려줍니다. 
+
+```java
+@Bean
+@Scope("prototype")
+public AsyncCommand asyncCommand() {
+   AsyncCommand command = new AsyncCommand;
+   // 의존성 주입이 필요한 경우 여기에 명시해라.
+   return command;
+}
+
+@Bean
+public CommandManager commandManager(){
+   // createCommand()를 사용하여 새로운 익명의 CommandManager 구현을 반환합니다.
+   // 새로운 프로토타입의 Command 객체를 리턴하기 위한 오버라이드
+   return new CommnadManager() {
+      protected Command createCommand() {
+         return asyncCommand();
+      }
+   }
+}
+```
+
+#### Further Information About How Java-Based-Configuration Works Internally
+
+`@Bean` 애노테이션이 붙여진 메소드가 2번 호출되는 것을 보여주는 다음 예제를 고려해 보자.
+
+```java
+@Configuration
+public class AppConfig {
+
+   @Bean
+   public ClientService clientService1() {
+      ClientServiceImpl clientService = new ClientServiceImpl();
+      clientService.setClientDao(clientDao());
+      return clientService;
+   }
+   
+   @Bean
+   public ClientService clientService2() {
+      ClientServiceImpl clientService = new ClientServiceImpl();
+      clientService.setClientDao(clientDao());
+      return clientService;
+   }
+   
+   @Bean
+   public ClientDao clientDao(){
+      return new ClientDaoImpl();
+   }
+}
+```
+
+<u>`clientDao()`는 `clientService1()` 에서 한번, `clientService2()` 에서 한번 호출됬다. 이러한 메소드들은 `ClientDaoImpl` 의 새로운 인스턴스를 생성하고 리턴하기 때문에, 일반적으로 2개의 인스턴스가 예측되어야 합니다(각 서비스 마다 하나씩). 이것은 명백히 문제가 될 것 입니다.</u> : Spring에서 인스턴스화 된 Bean은 기본적으로 싱글 톤 범위를 갖습니다.
+**지금부터는 마법에 대해서 설명할 것입니다 : 모든 `@Configuration` 클래스들은 시작할 때 `CGLIB` 와 함께 서브클래스화 됩니다. 서브 클래스에서, 자손 메소드는 부모 메소드를 호출 하고 새로운 인스턴스를 생성하기 전에 모든 캐시된(범위가 지정된) Bean을 위해서 Container를 첫번째로 확인합니다.****
+
+> 이러한 동작은 Bean의 범위에 따라서 달라질 것입니다. 여기에서는 Singleton에 대해서만 이야기 하고 있습니다.
+
+> Sprign 3.2부터, GGLIB 클래스는 `org.springframework.cglib`에 리패키징 되어, Spring 핵심 JAR 파일 내에 직접적으로 포함되어 있기 때문에 classpath에 CGLIB를 추가할 필요가 없어졌습니다. 
+
+> **시작시간에 CGLIB가 동적으로 기능을 추가하기 때문에 몇가지의 제약사항이 생깁니다. 특히, configuration class들은 무조건 `final` 이 되면 안됩니다. 그러나 Spring 4.3부터, 기본 주입을 위하여 `@Autowired` 또는 기본이 아닌 단일 생성자 선언 사용을 포함하여 모든 생성자가 configuration class에서 허용됩니다.**
+>
+> 개발자가 CGLIB-imposed 제한을 피하는 것을 선호한다면, `@Bean` 메소드들을 `@Configuration` 클래스가 아닌 클래스(ex. 평범한 @Component 클래스)에 선언하는 것을 고려해 보아라. **`@Bean` 메소드 사이의 메소드 간(cross-method) 호출은 인터셉트 되지 않음으로, 독점적으로 생성자 또는 메소드 레벨에서 종속성 주입에만 의존해야 합니다.**
+
+---
+
+### 1.12.5 Composing Java-based Configurations
+
+**Spring Java-based Configuration 특징은 개발자가 설정의 복잡성을 감소할 수 있는 애노테이션을 구성할 수 있게 해준다.**
+
+#### Using the `@Import` Annotation
+
+Spring XML 파일에서 `<import/>` 요소가 configuration을 모듈화하기 위해 사용되어지는 것처럼(Much as), `@Import` 애노테이션은 다른 Configuration 클래스로부터 `@Bean` 정의를 로딩할 수 있도록 해준다. 다음 예제에서 보여주는 것처럼.
+
+```java
+@Configuration
+public class ConfigA {
+   
+   @Bean
+   public A a() {
+      return new A();
+   }
+}
+
+@Configuration
+@Import(ConfigA.class)
+public class Config B{
+   
+   @Bean
+   public B b() {
+      return new B();
+   }
+}
+```
+
+Context가 인스턴스화 될 때, `ConfigA.class` 와 `ConfigB.class` 모두를 명시하지 않고 다음 예제와 같이 `ConfigB`만 오직 명시적으로 제공하면 됩니다.
+
+```java
+public static void main(String[] args){
+   ApplicationContext ctx = new AnnotationConfigApplicationContext(ConfigB.class);
+   
+   // Bean A 와 Bean B 모두 이용 가능할 것이다.
+   A a = ctx.getBean(A.class);
+   B b = ctx.getBean(B.class);
+}
+```
+
+**이러한 접근은 구성 중에 잠재적으로 많은 수의 `@Configuration` 클래스를 기억할 필요 없이 하나의 클래스만 처리하면 됨으로 컨테이너 인스턴스화를 단순화합니다.**
+
+> Spring Framework 4.2 부터, `@Import`는 일반적인 Component 클래스들을 참조할 수 있고, `AnnotationConfigApplicationContext.regist` 메소드와 유사하다. `@Import` 애노테이션은 개발자가 Component scanning을 피하고 싶을 때 모든 Component를 명확히 정의하기 위한 진입 지점으로써 몇가지 configuration 클래스들을 사용함으로써 특히 유용하다. 
+
+#### Injecting Dependencies on Imported `@Bean` Definitions
+
+앞의 예제는 작동하지만 단순합니다. 대부분의 실질적인 시나리오에서, Bean은 configuration class에서 서로 의존성을 가지고 있습니다. XML을 사용할 때, 이러한 것들은 어떠한 컴파일러도 포함되지 않기 때문에 이슈가 아니었습니다. 그래서 개발자는 `ref="someBean"`을 선언햇고 Container가 초기화되는 동안에 스프링이 이러한 의존성들을 처리하는 것에 대해서 믿었습니다. **`@Configuration` 클래스들을 사용할 때, 자바 컴파일러는 다른 Bean에 대한 참조가 유효한 Java 구문이어야 한다는 점에서(in that) 설정 모델에 제약사항을 두었습니다.**
+
+운 좋게도, 이러한 문제를 해결하는 것은 간단합니다. 우리가 이미 논의 했듯이, `@Bean` 메소드는 Bean 의존성들을 설명할 수 있는 임의의 수의 인자를 가질 수 있습니다. 여러 `@Configuration` 클래스들이 존재하는 다음의 실질적인 시나리오에 대해서 고려해 보아라. 각 Bean은 다른 `@Configuration` 클래스에 선언되어 있는 Bean들을 의존한다.
+
+```java
+@Configuration
+public class ServiceConfig {
+   
+   @Bean
+   public TransferService transferService(AccountRepository accountRepository){
+      return new TransferServiceImpl(accountRepository);
+   }
+}
+
+@Configuration
+public class RepositoryConfig {
+   
+   @Bean
+   public AccountRepository accountRepository(DataSource dataSource){
+      return new JdbcAccountRepository(dataSource);
+   }
+}
+
+@Configuration
+@Import({ServiceCOnfig.class, RepositoryConfig.class})
+public class SystemTestConfig {
+   
+   @Bean
+   public DataSource dataSource() {
+      // return new DataSource
+   }
+}
+
+public static void main(String[] args){
+   ApplicationContext ctx = new AnnotationConfigApplicationContext(SystemTestConfig.class);
+   // 모든 configuraton 클래스에 연결됩니다.
+   TransferService transferService = ctx.getBean(TransferService.class);
+   transferService.transfer(100.00, "A123", "C456");
+}
+
+```
+
+이러한 것들은 같은 결과를 일으킬 수 있는 또 다른 방법이다. **`@Configuration` 클래스들은 궁극적으로 Container의 다른 Bean이다. 즉, `@Configuration` 클래스는 `@Autowired` 와 `@Value` 주입 그리고 모든 다른 Bean 처럼 똑같은 기능을 사용할 수 있습니다.**
+
+> 해당 방법으로 주입하려는 의존성이 가장 쉬운 종류인지 확인하세요. `@Configuration` 클래스들은 Context 초기화 동안에 꽤 일찍 처리되어진다. 이러한 방식으로 의존성을 강제로 삽입하면 예기치 않은 이른 초기화가 발생할 수 있습니다. 가능하면, 이전 예제처럼 매개변수 기반의 의존성 주입에 의지하세요(resort to).
+>
+> **또한 `@Bean`을 통한 `BeanPostProcessor` 또는 `BeanFactoryPostProcessor` 정의에 특히 주의하세요. 이러한 것들은 보통 `static @Bean` 메소드로써 선언되어야 하고, 그들을 포함하는 configuration 클래스의 인스턴스화를 발생시키면 안된다.** **그렇지 않으면, `@Autowired` 와 `@Value`는 너무 일찍 Bean 인스턴스로 생성됨으로 Configuration 클래스에서 작동하지 않습니다.**
+
+다음은 어떻게 하나의 Bean이 또 다른 Bean에 autowired되어지는지에 대해서 보여주는 예제이다.
+
+```java
+@Configuration
+public class ServiceConfig {
+   
+   @Autowired
+   private AcoountRepository accountRepository;
+   
+   @Bean
+   public TransferService transferService() {
+      return new TrasferServiceImpl(accountRepository);
+   }
+}
+
+@Configuration
+public class RepositoryConfig {
+   private final DataSource dataSource;
+   
+   public RepositoryConfig(DataSource dataSource) {
+      this.dataSource = dataSource;
+   }
+   
+   @Bean
+   public AccountRepository accountRepository() {
+      return new JdbcAccountRepository(dataSource);
+   }
+}
+
+@Configuration
+@Import({ServiceConfig.class, RespotiroyConfig.class})
+public class SystemTestConfig {
+   
+   @Bean
+   public DataSource dataSource() {
+      // return new DatSource
+   }
+}
+
+public static void main(String[] args){
+   ApplicationContext ctx = new AnnotationConfigApplicationContext(SystemTestConfig.class);
+   // 모든 configuration 클래스들에 연결합니다.
+   TransferService transferService = ctx.getBean(TransferService.class);
+   transferService.transfer(100.00, "A123", "C456");
+}
+```
+
+> **`@Configuration` 클래스에 생성자 주입은 Spring Framework 4.3부터 지원합니다. 만약 Target Bean이 오직 하나의 생성자만 정의 했다면, @Autowired를 명시해 줄 필요가 없다는 것에 주목해야 합니다.**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
