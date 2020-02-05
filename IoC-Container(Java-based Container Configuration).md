@@ -710,15 +710,79 @@ public static void main(String[] args){
 
 > **`@Configuration` 클래스에 생성자 주입은 Spring Framework 4.3부터 지원합니다. 만약 Target Bean이 오직 하나의 생성자만 정의 했다면, @Autowired를 명시해 줄 필요가 없다는 것에 주목해야 합니다.**
 
+#### Fully-qualifying imported beans for ease of navigation
 
+**이전 시나리오에서, `@Autowired`를 사용은 잘 작동하고 원하는 모듈성을 지원하지만 어디에 autowired Bean 정의가 선언되었는지 판별하는 것은 아직도 다소 모호하다.** 예로들어, 개발자가 `ServiceConfig`를 보고 있을때 , 어디에 `@Autowired AccountRepository` Bean이 선언되어있는지 어떻게 알 것인가? 이러한 것들은 코드에서 명확하지가 않고 이것은 괜찮을 수도 있습니다. **Spring Tool Suite는 모든 것이 어떻게 wired되어 있는지 보여주는 그래프를 렌더링 할 수 있는 툴링을 제공한다는 것을 명심해야 합니다.** 또한, 개발자가 사용하는 IDE는 쉽게 모든 선언과 `AccoutRepository` 타입의 사용을 쉽게 찾아줄 것이고, 해당 타입을 반환하는 `@Bean` 메소드의 위치를 개발자에게 보여 줄 것이다.
 
+**이러한 모호성이 허용되지 않고 IDE 내에서 하나의 `@Configuration`에서 다른 `@Configuration` 클래스로 직접 탐색하려는 경우, configuration 클래스들 자체를 autowiring 하는 것을 고려해라.** 다음 예제에서 어떻게 이러한 것들을 사용하는지에 대해서 보여준다.
 
+```java
+@Configuration
+public class ServiceConfig {
+   
+   @Autowired
+   private RepositoryConfig repositoryConfig;
+   
+   @Bean
+   public TransferService transferService(){
+      // 설정 클래스를 @Bean 메소드로 탐색 합니다.
+      return new TransferServiceImpl(repositoryConfig.accountRepository());
+   }
+}
+```
 
+**이전의 상황에서, `AccountRepository`가 정의된 곳은 완전히 명백하다. 그러나 `ServiceConfig`는 `RespositoryConfig` 매우 밀접하게 연결되어 있습니다. 이것이 바로 trade-off 입니다. 이러한 밀접한 결합은 인터페이스 또는 추상 클래스 기반의 `@Configuration` 클래스를 사용함으로써 다소 완화할 수 있습니다.** 다음 예제에서 고려해 보세요.
 
+```java
+@Configuration
+public class ServiceConfig {
+   
+   @Autowired
+   private RepositoryConfig repositoryConfig;
+   
+   @Bean
+   public TransferService transferService() {
+      return new TransferServiceImpl(repositoryConfig.accountRepository());
+   }
+}
 
+@Configuration
+public interface RepositoryConfig {
+   
+   @Bean
+   AccountRepository accountRepository();
+}
 
+@Configuration
+public class DefaultRepositoryConfig implements RepositoryConfig {
+   
+   @Bean
+   public AccountRepository accountRepository() {
+      return new JdbcAccountRepository(...);
+   }
+}
 
+@Configuration
+@Import({ServiceConfig.class, DefaultRepositoryConfig.class}) // 구체적인 설정 import
+public class SystemTestConfig {
+   @Bean
+   public DataSource dataSource(){
+      // return DataSource
+   }
+}
 
+public static void main(String[] args){
+   ApplicationContext ctx = new AnnotationConfigApplicationContext(SystemTestConfig.class);
+   TransferService transferService = ctx.getBean(TransferService.class);
+   transferService.transfer(100.00, "A123", "C456");
+}
+```
+
+**여기서의 `ServiceConfig는` 구체적인 `DefaultRepositoryConfig`와 관련하여(respect to) 느슨하게 결합되어 있습니다.** 그리고 내장된 IDE 툴링은 여전히 유용합니다. 개발자는 `RepositoryConfig` 구현 계층 타입을 쉽게 얻을 수 있습니다. 이러한 방법에서, `@Configuration` 클래스와 해당 종속성을 탐색하는 것은 인터페이스 기반의 코드를 탐색하는 일반적인 프로세스와 다르지 않습니다.
+
+> 만약 개발자가 특정 Bean의 생성 순서에 영향을 주고 싶다면, `@Lazy`(시작이 아닌 최초 액세스시 생성) 또는 `@DependsOn`특정한 다른 Bean(현재 Bean 이전에 특정한 다른 Bean이 생성되어지게 만들고, 후자의 직접적인 의존성이 의미하는 것 이상으로(beyond)) 로써 몇몇의 Bean들을 선언하는 것을 고려해야 한다.
+
+### Conditionally Include @Configuration Classes or @Bean Methods
 
 
 
