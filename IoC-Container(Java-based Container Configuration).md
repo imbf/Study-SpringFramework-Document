@@ -572,7 +572,7 @@ public class AppConfig {
 
 #### Using the `@Import` Annotation
 
-Spring XML 파일에서 `<import/>` 요소가 configuration을 모듈화하기 위해 사용되어지는 것처럼(Much as), `@Import` 애노테이션은 다른 Configuration 클래스로부터 `@Bean` 정의를 로딩할 수 있도록 해준다. 다음 예제에서 보여주는 것처럼.
+**Spring XML 파일에서 `<import/>` 요소가 configuration을 모듈화하기 위해 사용되어지는 것처럼(Much as), `@Import` 애노테이션은 다른 Configuration 클래스로부터 `@Bean` 정의를 로딩할 수 있도록 해준다.** 다음 예제에서 보여주는 것처럼.
 
 ```java
 @Configuration
@@ -595,7 +595,7 @@ public class Config B{
 }
 ```
 
-Context가 인스턴스화 될 때, `ConfigA.class` 와 `ConfigB.class` 모두를 명시하지 않고 다음 예제와 같이 `ConfigB`만 오직 명시적으로 제공하면 됩니다.
+Context가 인스턴스화 될 때, `ConfigA.class` 와 `ConfigB.class` 모두를 명시하지 않고 다음 예제와 같이 `ConfigB`만 오직 명시적으로 제공하면 됩니다. (컨테이너 인스턴스화를 단순화 한다.)
 
 ```java
 public static void main(String[] args){
@@ -607,13 +607,13 @@ public static void main(String[] args){
 }
 ```
 
-**이러한 접근은 구성 중에 잠재적으로 많은 수의 `@Configuration` 클래스를 기억할 필요 없이 하나의 클래스만 처리하면 됨으로 컨테이너 인스턴스화를 단순화합니다.**
+**이러한 접근은 구성 중에 잠재적으로 많은 수의 `@Configuration` 클래스를 기억할 필요 없이 <u>하나의 클래스만 처리</u>하면 됨으로 컨테이너 인스턴스화를 단순화합니다.**
 
-> Spring Framework 4.2 부터, `@Import`는 일반적인 Component 클래스들을 참조할 수 있고, `AnnotationConfigApplicationContext.regist` 메소드와 유사하다. `@Import` 애노테이션은 개발자가 Component scanning을 피하고 싶을 때 모든 Component를 명확히 정의하기 위한 진입 지점으로써 몇가지 configuration 클래스들을 사용함으로써 특히 유용하다. 
+> Spring Framework 4.2 부터, `@Import`는 일반적인 Component 클래스들을 참조할 수 있고, `AnnotationConfigApplicationContext.regist` 메소드와 유사하다. `@Import` 애노테이션은 개발자가 Component scanning을 피하고 싶을 때 <u>모든 Component를 명확히 정의하기 위한 진입 지점</u>으로써 몇가지 configuration 클래스들을 사용함으로써 특히 유용하다. 
 
 #### Injecting Dependencies on Imported `@Bean` Definitions
 
-앞의 예제는 작동하지만 단순합니다. 대부분의 실질적인 시나리오에서, Bean은 configuration class에서 서로 의존성을 가지고 있습니다. XML을 사용할 때, 이러한 것들은 어떠한 컴파일러도 포함되지 않기 때문에 이슈가 아니었습니다. 그래서 개발자는 `ref="someBean"`을 선언햇고 Container가 초기화되는 동안에 스프링이 이러한 의존성들을 처리하는 것에 대해서 믿었습니다. **`@Configuration` 클래스들을 사용할 때, 자바 컴파일러는 다른 Bean에 대한 참조가 유효한 Java 구문이어야 한다는 점에서(in that) 설정 모델에 제약사항을 두었습니다.**
+앞의 예제는 작동하지만 단순합니다. 대부분의 실질적인 시나리오에서, Bean은 configuration class에서 서로 의존성을 가지고 있습니다. XML을 사용할 때, 이러한 것들은 어떠한 컴파일러도 포함되지 않기 때문에 이슈가 아니었습니다. 그래서 개발자는 `ref="someBean"`을 선언할 수 있었고 Container가 초기화되는 동안에 스프링이 이러한 의존성들을 처리하는 것에 대해서 믿었습니다. **`@Configuration` 클래스들을 사용할 때, 자바 컴파일러는 다른 Bean에 대한 참조가 유효한 Java 구문이어야 한다는 점에서(in that) 설정 모델에 제약사항을 두었습니다.**
 
 운 좋게도, 이러한 문제를 해결하는 것은 간단합니다. 우리가 이미 논의 했듯이, `@Bean` 메소드는 Bean 의존성들을 설명할 수 있는 임의의 수의 인자를 가질 수 있습니다. 여러 `@Configuration` 클래스들이 존재하는 다음의 실질적인 시나리오에 대해서 고려해 보아라. 각 Bean은 다른 `@Configuration` 클래스에 선언되어 있는 Bean들을 의존한다.
 
@@ -668,7 +668,7 @@ public static void main(String[] args){
 public class ServiceConfig {
    
    @Autowired
-   private AcoountRepository accountRepository;
+   private AccountRepository accountRepository;
    
    @Bean
    public TransferService transferService() {
@@ -678,8 +678,10 @@ public class ServiceConfig {
 
 @Configuration
 public class RepositoryConfig {
+
    private final DataSource dataSource;
    
+   // @Configuration 클래스에 생성자 주입은 Spring Framework 4.3부터 지원하고, Target Bean이 오직 하나의 생성자만 정의 했다면, @Autowired를 명시해 줄 필요가 없다는 것에 주목해야 합니다!!!!
    public RepositoryConfig(DataSource dataSource) {
       this.dataSource = dataSource;
    }
@@ -714,7 +716,7 @@ public static void main(String[] args){
 
 **이전 시나리오에서, `@Autowired`를 사용은 잘 작동하고 원하는 모듈성을 지원하지만 어디에 autowired Bean 정의가 선언되었는지 판별하는 것은 아직도 다소 모호하다.** 예로들어, 개발자가 `ServiceConfig`를 보고 있을때 , 어디에 `@Autowired AccountRepository` Bean이 선언되어있는지 어떻게 알 것인가? 이러한 것들은 코드에서 명확하지가 않고 이것은 괜찮을 수도 있습니다. **Spring Tool Suite는 모든 것이 어떻게 wired되어 있는지 보여주는 그래프를 렌더링 할 수 있는 툴링을 제공한다는 것을 명심해야 합니다.** 또한, 개발자가 사용하는 IDE는 쉽게 모든 선언과 `AccoutRepository` 타입의 사용을 쉽게 찾아줄 것이고, 해당 타입을 반환하는 `@Bean` 메소드의 위치를 개발자에게 보여 줄 것이다.
 
-**이러한 모호성이 허용되지 않고 IDE 내에서 하나의 `@Configuration`에서 다른 `@Configuration` 클래스로 직접 탐색하려는 경우, configuration 클래스들 자체를 autowiring 하는 것을 고려해라.** 다음 예제에서 어떻게 이러한 것들을 사용하는지에 대해서 보여준다.
+**이러한 모호성이 허용되지 않고 IDE 내에서 하나의 `@Configuration`에서 다른 `@Configuration` 클래스로 직접 탐색하려는 경우, configuration 클래스 자체를 autowiring 하는 것을 고려해라.** 다음 예제에서 어떻게 이러한 것들을 사용하는지에 대해서 보여준다.
 
 ```java
 @Configuration
@@ -778,13 +780,38 @@ public static void main(String[] args){
 }
 ```
 
-**여기서의 `ServiceConfig는` 구체적인 `DefaultRepositoryConfig`와 관련하여(respect to) 느슨하게 결합되어 있습니다.** 그리고 내장된 IDE 툴링은 여전히 유용합니다. 개발자는 `RepositoryConfig` 구현 계층 타입을 쉽게 얻을 수 있습니다. 이러한 방법에서, `@Configuration` 클래스와 해당 종속성을 탐색하는 것은 인터페이스 기반의 코드를 탐색하는 일반적인 프로세스와 다르지 않습니다.
+**여기서의 `ServiceConfig`는 구체적인 `DefaultRepositoryConfig`와 관련하여(respect to) 느슨하게(loosely) 결합되어 있습니다.** 그리고 내장된 IDE 툴링은 여전히 유용합니다. 개발자는 `RepositoryConfig` 구현 계층 타입을 쉽게 얻을 수 있습니다. 이러한 방법에서, `@Configuration` 클래스와 해당 종속성을 탐색하는 것은 인터페이스 기반의 코드를 탐색하는 일반적인 프로세스와 다르지 않습니다.
 
 > 만약 개발자가 특정 Bean의 생성 순서에 영향을 주고 싶다면, `@Lazy`(시작이 아닌 최초 액세스시 생성) 또는 `@DependsOn`특정한 다른 Bean(현재 Bean 이전에 특정한 다른 Bean이 생성되어지게 만들고, 후자의 직접적인 의존성이 의미하는 것 이상으로(beyond)) 로써 몇몇의 Bean들을 선언하는 것을 고려해야 한다.
 
 ### Conditionally Include @Configuration Classes or @Bean Methods
 
+**임의의 시스템 상태에 의존하여, 종종 완전한 `@Configuration` 클래스 또는 심지어 개인적인 `@Bean` 메소드를 조건적으로 활성화 또는 비활성화 시키는 것은 유용하다.** 이러한 경우의 일반적인 예는 스프링 환경에서 특정한 프로파일이 활성화된 경우에만`@Profile` 애노테이션을 사용해서 Bean을 활성화 시킬 수 있다. (자세한 내용은 Bean Definition Profiles(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/core.html#beans-definition-profiles)를 참조)
 
+`@Profile` 애노테이션은 실제로 더많은 융통성 있는`@Conditional` 애노테이션을 사용함으로써 실제로 구현되어질 수 있다. `@Conditional` 애노테이션은 `@Bean` 이 등록되기전에 참고해야만 하는 특정한 `org.springframework.context.annotation.Condition` 구현을 나타낸다.
+
+`Condition` 인터페이스의 구현은 `true` 또는 `false`를 리턴하는 `matches(...)` 메소드를 제공한다. 예로들어 다음의 리스트는 실질적인 `@Profile` 을 위해 사용되어진 `Condition` 구현을 보여준다.
+
+```java
+@Override
+public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+   // @Profile 애노테이션 속성을 읽는다.
+   MultiValueMap<String, Object> attrs = metadata.getAllAnnotationAttributes(Profile.class.getName());
+   if(attrs != null) {
+     	for(Object value : attrs.get("value")) {
+         if(context.getEnvironment().acceptsProfiles(((String[]) value))) {
+   			return true;         
+         }
+      }
+      return false;
+   }
+   return true;
+}
+```
+
+더 많은 정보를 알고 싶다면 `@Conditional` 의 Java document를 참고해 보자.
+
+#### Combinig Java and XML Configuration
 
 
 
