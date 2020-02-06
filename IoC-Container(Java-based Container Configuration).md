@@ -880,17 +880,79 @@ public static void main(String[] args){
 
 > `system-test-config.xml` 파일에서, `AppConfig` `<bean/>`은 `id` 요소를 선언하지 않았다. 그렇게 하는 것은 받아들일 수 있지만, 어떠한 Bean이 이것을 참조하지 않는 한 불필요하며, 컨테이너에서 name에 의해 Container로 부터 명백히 가져와질(fetched) 가능성이 없다(unlikely). 비슷하게, `DataSource` Bean은 오직 type에 의해서 autowired되어진다. 그래서 명확한 Bean `id` 는 사실 엄격히 요구되어지지 않는다.
 
+#### Using \<context:component-scan/\> to pick up `@Configuration` class
 
+`@Configuration` 은 `@Component` 와 함께 meta-annotated가 되어있기 때문에, `@Configuration` 애노테이션이 붙여진 클래스들은 자동적으로 component scanning을 위한 후보자가 됩니다. 이전 예제에서 설명되어진것과 같은 시나리오를 사용함으로써, Component-scanning을 사용하기 위해 `system-test-config.xml`을 재정의할 수 있다. **이 경우에는 `<context:component-scan/>`이 동일한 기능을 활성화 하기 때문에, 개발자는 `<context:annotation-config/>`를 선언할 필요가 없다는 것을 명심해라!!**
 
+다음의 예제는 수정된 `system-test-config.xml` 파일을 보여준다.
 
+```xml
+<beans>
+	<!-- AppConfig를 Bean Definitions로써 수집하고 등록한다. -->
+   <context:component-scan base-package="com.acme"/>
+   <context:property-placeholder location="classpath:/com/acme/jdbc.properties"/>
+   
+   <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+   	<property name="url" value="${jdbc.url}"/>
+      <property name="username" value="${jdbc.username}"/>
+      <property name="password" value="${jdbc.password}"/>
+   </bean>
+</beans>
+```
 
+#### `@Configuration` Class-centric Use of XML with `@ImportResource`
 
+`@Configuration` 클래스들이 Container를 설정하기 위한 가장 상위의 매커니즘인 어플리케이션에서, 여전히 일부의 XML은 사용해야 된다. 이러한 시나리오에서, **개발자는 `@ImportResource`를 사용할 수 있고 오직 필요한 만큼의 XML을 정의할 수 있다. 이렇게 하는 것은 Container를 설정하기 위해 "Java 중심" 접근을 가능하게 해주고 XML을 최소한으로 유지해준다.** 다음 예제(configuration class, Bean정의를 포함하는 XML파일, properties file, main class 등을 포함하는 예제)에서는 XML을 필요한 만큼만 사용하는 "Java 중심" 설정을 작성하기 위해 어떻게 `@ImportResource` 사용하는지에 대해서 보여준다.
 
+**configuration class**
 
+```java
+@Configuration
+@ImportResource("classpath:/com/acme/properties-config.xml")
+public class AppConfig {
+   
+   @Value("${jdbc.url}")
+   private String url;
+   
+   @Value("${jdbc.username}")
+   private String username;
+   
+   @Value("${jdbc.password}")
+   private String password;
+   
+   @Bean
+   public DataSource dataSource(){
+      return new DriverManagerDataSource(url, username, password);
+   }
+}
+```
 
+**properties-config.xml**
 
+```xml
+<beans>
+	<context:property-placeholder location="classpath:/com/acme/jdbc.properties"/>
+</beans>
+```
 
+**jdbc.properties**
 
+```
+jdbc.properties
+jdbc.url=jdbc:hsqldb:hsql://localhost/xdb
+jdbc.username=sa
+jdbc.password=
+```
+
+**main class**
+
+```java
+public static void main(String[] args){
+   ApplicationContext ctx = new AnnotationConfigApplicationContext(AppConfig.class);
+   TransferService transferService = ctx.getBean(TransferService.class);
+   // ...
+}
+```
 
 
 
