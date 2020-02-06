@@ -813,6 +813,83 @@ public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata)
 
 #### Combinig Java and XML Configuration
 
+**Spring의 `@Configuration` 클래스 지원은 Spring XML을 위한 100프로 완전한 교체를 목표로 하지 않는다.** Spring XML namespaces와 같은 몇가지의 기능들은 Container를 구성하기 위해서 몇가지 이상적인 방법으로 남아있습니다. XML이 편리하거나 필요한 경우에, 개발자는 선택해야 합니다. `ClassPathXmlApplicationContext`등을 사용하여 컨테이너를 "XML 중심" 방식으로 인스턴스화 하거나 `AnnotationConfigApplicationContext`를 사용하여 "Java 중심" 방식으로 컨테이너를 인스턴스화 할 수 있습니다. 그리고 `@ImportResource` 애노테이션은 XML을 필요한 경우에 import할 수 있습니다.
+
+#### XML-centric Use of `@Configuration` Classes
+
+**XML에서 Spring Container를 bootstrap하고 `@Configuration` 클래스를 ad-hoc 방식으로 포함하는 것이 더 나을 수 있습니다.** 예로 들어, Spring XML을 사용하는 기존의 codebase에서, 필요에 따라 `@Configuration` 클래스를 작성하고 기존의 XML 파일에 `@Configuration` 클래스를 포함하는 것은 보다 더 쉽습니다. 다른 섹션에서, 우리는 XML 중심 상황에서 `@Configuration` 클래스들을 사용하는 방법에 대한 옵션에 대해서 다룰것입니다.
+
+#### Declaring `@Configuration` classes as plain Spring `<bean/>` elements
+
+`@Configuration` 클래스들은 궁극적으로 Container의 Bean 정의들을 의미하는 것이라는 사실을 기억해라. 이러한 일련의 예제에서, 개발자는 `AppConfig`라고 명명된 `@Configuration`  클래스를 생성하고 `<bean/>`정의로써 `system-test-config.xml` 내에 포함할 수 있습니다. **`<context:annotation-config>`가 켜져있으므로, Container는 `@Configuration` 애노테이션을 인지하고 `AppConfig` 내에 선된 `@Bean`메소드를 적절히 처리합니다.**
+
+다음의 예제는 임의의 자바의 Configuration 클래스를 보여준다.
+
+```java
+@Configuration
+public class AppConfig {
+   
+   @Autowired
+   private DataSource dataSource;
+   
+   @Bean
+   public AccountRepository accountRepository() {
+      return new JdbcAccountRepository(dataSource);
+   }
+   
+   @Bean
+   public TransferService transferService() {
+      return new TransferService(accountRepository());
+   }
+}
+```
+
+다음 예제는 `system-test-config.xml` 샘플 파일의 일부분을 보여줍니다.
+
+```xml
+<beans>
+	<!-- @Autowired 또는 @Configuration과 같은 애노테이션의 처리를 활성화 하게 하는 element이다. -->
+   <context:annotation-config/>
+   <context:property-placeholder location="clsspath:/com/acme/jdbc.properties"/>
+   
+   <bean class="com.acme.AppConfig"/>
+   
+   <bean class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+   	<property name="url" value="${jdbc.url}"/>
+      <property name="username" value="${jdbc.username}"/>
+      <property name="password" value="${jdbc.password}"/>
+   </bean>
+</beans>
+```
+
+다음의 예제는 가능한 `jdbc.properties` 파일을 보여준다.
+
+```
+jdbc.url=jdbc:hsqldb:hsql://localhost/xdb
+jdbc.username=sa
+jdbc.password=
+```
+
+```java
+public static void main(String[] args){
+   ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:/com/acme/system-test-config.xml");
+   TransferService transferService = ctx.getBean(TransferService.class);
+   // ...
+}
+```
+
+> `system-test-config.xml` 파일에서, `AppConfig` `<bean/>`은 `id` 요소를 선언하지 않았다. 그렇게 하는 것은 받아들일 수 있지만, 어떠한 Bean이 이것을 참조하지 않는 한 불필요하며, 컨테이너에서 name에 의해 Container로 부터 명백히 가져와질(fetched) 가능성이 없다(unlikely). 비슷하게, `DataSource` Bean은 오직 type에 의해서 autowired되어진다. 그래서 명확한 Bean `id` 는 사실 엄격히 요구되어지지 않는다.
+
+
+
+
+
+
+
+
+
+
+
 
 
 
