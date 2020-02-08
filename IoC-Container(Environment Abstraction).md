@@ -45,13 +45,61 @@ public DataSource dataSource() throws Exception {
 
 만약 특정한 환경의 Bean Definition 예제에서 보여주는 사례를 일반화하면, 우리는 결국 특정한 Contexts에서 특정한 Bean Definitions를 등록할 필요가 있습니다.(end up with : 결국 ~하게되다.) **개발자는 상황 A 에서 Bean 정의의 특정한 profile 및 상황 B 에서 또다른 profile을 등록하길 원한다고 말할 수 있습니다.** 우리는 이러한 요구를 반영하기 위해 우리의 설정을 업데이트 하기 시작할 것입니다.
 
-###  Using `@Profile`
+####  Using `@Profile`
 
+**`@Profile` 애노테이션은 하나이상의 특정한 profiles가 활성화 될 때 Component가 등록할 자격이 있다는것을 가리킵니다.** 이전 예제를 사용함으로써, `dataSource` 설정을 다음과 같이 재작성 할 수 있습니다.
 
+```java
+@Configuration
+@profile("development")
+public class StandaloneDataConfig {
+   
+   @Bean
+   public DataSource dataSource() {
+      return new EmbeddedDatabaseBuilder()
+         .setType(EmbeddedDatabaseType.HSQL)
+         .addScript("classpath:com/bank/config/sql/schema.sql")
+         .addScript("classpath:com/bank/config/sql/test-data.sql")
+         .build();
+   }
+}
+```
 
+```java
+@Configuration
+@Profile("productio")
+public class JndiDataConfig {
+   
+   @Bean(destroyMethod="")
+   public DataSource dataSource() throws Exception {
+      Context ctx = new InitialContext();
+      return (DataSource) ctx.lookup("java:comp/env/jdbc/datasource");
+   }
+}
+```
 
+> 이전에 언급했듯이, `@Bean` 메소드 에서는, 개발자는 일반적으로 Spring의 `JndiTemplate` / `JndiLocatorDelegate` helpers 또는 stragiht JNDI `IntialContext`를 사용함으로써 프로그래밍 방식의 JNDI 조회를 사용하도록 선택합니다.그리고, `FactoryBean`타입으로써 리턴타입을 선언하는 것을 강요하는  `JndiObjectFactoryBean`는 사용하지 않습니다.
 
+Profile String은 간단한 Profile name(예로들어, `production`) 또는 profile 표현식을 포함할 수 있다. profile 표현식은 더 복잡한 profile 로직이 표현되는 것을 허용합니다.(예로들어, `proudction & us-east`). 다음 연산자는 profile 표현식에서 제공되어지는 연산자 입니다.
 
+- `!` : profile에 대한 논리적 "not"
+- `&` : profiles에 대한 논리적 "and"
+- `|` : profiles에 대한 논리적 "or"
+
+> 개발자는 `&`와 `|` 연산자를 괄호(parentheses) 사용 없이 혼합해서 사용할 수 없다. 예로들어, `production & us-east | eu-central` 은 유효하지 않는 표현식이다. 이러한 유효하지 않는 표현식은 `production & (us-east | eu-central)`와 같은 유효한 표현식으로 바꿀 수 있다.
+
+**개발자는 `@Profile` 애노테이션을 사용자가 구성한 애노테이션을 생성할 목적으로 meta-annotation으로써 사용할 수 있다.** 다음의 예제는 `@Profile("production")`을 위한 drop-in 대체로써 사용자 `@Production` 애노테이션을 정의할 수 있다.
+
+```java
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+@Profile("production")
+public @interface Production {
+   
+}
+```
+
+> **만약 `@Configuration` 클래스가 `@Profile` 애노테이션이 붙여져 있다면 모든 `@Bean` 메소드와 `@Import` 애노테이션과 연관된 해당 클래스들은 하나이상의 특정한 Profile이 활성화 되지 않는다면 무시되어진다(bypassed).** 만약 `@Component` 또는 `@Configuration` 클래스가 `@Profile({"p1", "p2"})` 애노테이션으로써 표시되어져 있다면, 해당 클래스는 profile "p1" 또는 "p2"가 활성화 되지 않는 한(unless) 등록되어지거나 또는 처리되어지지 않는다. 만약 주어진 profile이 Not 연산자(`!`)가 앞에 붙어 있다면, 어노테이션이 붙여진 요소들은 오직 해당 profile이 활성화 되지 않을 때 등록되어질 것입니다. 예로들어, `@Profile({"p1", "!p2"})`가 요소에 붙여 졌을 때, 등록은 profile "p1"이 활성화 되거나 또는 profile "p2"가 활성화 되지 않으면 발생할 것입니다.
 
 
 
