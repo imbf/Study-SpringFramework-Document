@@ -187,11 +187,126 @@ XML에 대응되는 것은 `<beans>` 요소의 `profile` 속성입니다. 이전
 </beans>
 ```
 
+**`spring-bean.xsd`은 파일의 마지막 요소와 같은 요소만 허용하도록 제한되어 있습니다.** 이러한 것들은 XML 파일에서 혼란(clutter)을 일으키지(incurring) 않고 유연성을 제공합니다.
 
+> XML은 앞에서 설명한 profile 표현식을 지원하지 않습니다. 그러나 `!` 연산자를 사용함으로써 profile을 무효화(negate) 할 수 있습니다. 다음 예제와 같이 중첩된 profile을 사용함으로써 논리적인 "and"를 적용할 수도 있습니다.
+>
+> ```xml
+> <beans xmlns="http://www.springframework.org/schema/beans"
+>     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+>     xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+>     xmlns:jee="http://www.springframework.org/schema/jee"
+>     xsi:schemaLocation="...">
+>    
+>    <!-- 다른 Bean 정의 -->
+>    
+>    <beans profile="production">
+>    	<beans profile="us-east">
+>       	<jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+>       </beans>
+>    </beans>
+> </beans>
+> ```
+>
+> 이전 예제에서, `production` 과 `us-east` profile이 둘다 활성화 되면, `dataSource` Bean이 노출되어졌다.
 
+#### Activating a Profile
 
+**설정을 업데이트 했음으로(Now that), Spring에게 어떠한 profile을 활성화 할 것인지 지시해야 합니다.** 샘플 애플리케이션을 지금 시작했다면, Container가 `dataSource` 라고 명명된 Bean을 찾을 수 없음으로 `NoSuchBeanDefinitionException`  예외가 던져질 것이다.
 
+profile을 활성화 시키는 것은 여러가지 방법으로 수행 되어질 수 있지만, 가장 간단한 방법은 `ApplicationContext` 를 통해 사용 가능한 `Environment` API에 대해서 프로그래밍 방식으로 이러한 것들을 수행하는 것 입니다. 다음 예제에서 어떻게 이러한 것들을 수행하는지에 대해서 보여줍니다.
 
+```java
+public static void main(String[] args){
+   AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
+	ctx.getEnvironment().setActiveProfiles("development");
+   ctx.register(SomeConfig.class, StandaloneDataConfig.class, JndiDataConfig.class);
+   ctx.refresh();
+}
+```
+
+**게다가, 개발자는 `spring.profiles.active` property를 통해서 선언적으로 profiles를 활성화 시킬 수 있다.** `spring.profiles.active` property는 시스템 환경변수, JVM 시스템 properties, `web.xml`의 서블릿 context 인자, 심지어는 JNDI의 항목(see PropertySource Abstraction)으로 지정할 수 있습니다. 통합 테스트에서, 스프링 테스트 모듈의 `@ActiveProfiles` 애노테이션을 사용함으로써 활성 프로파일을 선언할 수 있습니다. (context configuration with environment profiles(https://docs.spring.io/spring/docs/5.2.3.RELEASE/spring-framework-reference/testing.html#testcontext-ctx-management-env-profiles) 를 참고해라.)
+
+**Profiles은 "either-or" 제안이 아니라는 것을 명심해라. 개발자는 한번에 여러개의 Profiles를 활성화 시킬 수 있다. 프로그램적으로, 개발자는 `setActiveProfiles()` 메소드에 여러개의 profile names를 제공할 수 있다.** `setActiveProfiles()` 메소드는 `String...` varargs를 받아들일 수 있다. 다음 예제는 여러개의 profiles을 활성화 시키는 예제이다.
+
+```java
+ctx.getEnvironment().setActiveProfiles("profile1","profile2");
+```
+
+`spring.profiles.active`는 profiles name가 컴마(,)로 구분된 리스트를 다음 예제와 같이 수용할 수 있다.
+
+```
+-Dspring.profiles.active="profile1,profile2"
+```
+
+#### Default Profile
+
+기본적인 profile은 기본적으로 활성화 되어 있는 profile을 포함한다. 다음 예제를 고려해 보자.
+
+```java
+@Configuration
+@Profile("default")
+public class DefaultDataConfig {
+   
+   @Bean
+   public DataSource dataSource() {
+      return new EmbeddedDatabaseBuilder()
+         .setType(EmbeddedDatabaseType.HSQL)
+         .addScript("classpath:com/bank/config/sql/schema.sql")
+         .build();
+   }
+}
+```
+
+**만약 어떠한 profile도 활성화 되지 않으면, `dataSource`는 생성되어질 것이다.** 개발자는 하나 이상의 Bean을 위한 기본 정의를 제공하는 방법으로써 이러한 것들을 사용할 수 있다. **만약 어느 하나의 profile이라도 활성화 되면, 기본적인 profile은 적용되지 않을 것이다.**
+
+개발자는 `Environment` 의 `setDefaultProfiles()` 또는 `spring.profiles.default` property를 사용함으로써 기본 profile의 이름을 바꿀 수 있습니다.
+
+---
+
+### 1.13.2 `PropertySource` Abstraction
+
+**Spring의 `Environment` 추상화는 property source의 설정가능한 계층에서 검색 작업(operation)을 제공합니다.** 다음의 리스트를 고려해 보자.
+
+```java
+public static void main(String[] args){
+   ApplicationContext ctx = new GenericApplicationContext();
+   Environment env = ctx.getEnvironment();
+   boolean containsMyProperty = env.containsProperty("my-property");
+   System.out.println("Does my environment contain the'my-property' property? " + containsMyProperty)
+}
+```
+
+이전 설명에서, Spring에게 `my-property` property가 현재 환경에 정의되어 있는지 요청하는 고 수준의 방법에 대해서 살펴 보았다. 이러한 질문에 답하기 위해서, `Environment` 객체는 일련의 `PropertySource` 객체 검사를 수행합니다. **`PropertySource`는 모든 키-값 소스에 대한 간단한 추상화입니다, 그리고 Spring의 `StandardEnvironment`는 2가지의 PropertySource 객체들과 함께 설정이 되어있다. 하나는 일련의 JVM system properties에 대해서 나타내고(System.getProperties()) 그리고 다른 하나는 일련의 시스템 환경 변수를 나타낸다(System.getenv()).**
+
+> 이러한 기본적인 property 소스들은 독립형 어플리케이션에서 사용하기위해서  `StandardEnvironment`애 존재합니다.
+> `standardServletEnvironment`는 servlet config 와 servlet context parameters를 포함한 추가적인 기본 property 소스와 함께 채워집니다(populated). 이러한 것들은 선택적으로 `JndiPropertySource` 를 활성화 시킬 수 있습니다. 더 자세한 내용은 Java document를 참고하세요!!
+
+구체적으로 개발자가 `StandardEnvironment`를 사용할 때, `env.contansProperty("my-property")` 호출은 
+`my-property` 시스템 property 또는 `my-property` 환경 변수가 런타임시에 존재하는 경우 `true`를 리턴한다.
+
+> 수행되는 검색은 계층적이다. 기본적으로, 시스템 properties는 환경 변수보다(over) 우선(precedence)합니다. 그러므로 `my-property` property가 양쪽에서 설정 되어져서 `env.getProperty("my-property")`를 호출하는 동안에 발생한다면, 시스템 property 값 "wins"가 리턴됩니다. **property 값들은 병합되어지지 않고 이전 항목으로 완전히 재정의 된다는 것을 명심해야 합니다.**
+>
+> 일반적인 `StandardServletEnvironment`를 위해서, 완전한 계층이 명시되어 있습니다. 가장 높은 우선순위 항목은 가장 위에 위치해 있습니다.
+>
+> 1. Servletconfig parameters ( 해당되는 경우 - 예 : `DispatcherServlet` context의 경우 )
+> 2. ServletContext parameters ( web.xml context-param 항목)
+> 3. JNDI environment variables ( `java:comp/env/` 항목들)
+> 4. JVM system properties ( `-D` command-line 인자 )
+> 5. JVM system environment ( 작동하는 시스템 환경 변수 )
+
+가장 중요한것으로, 전체 메커니즘은 설정할 수 잇습니다. 이러한 검색에 통합하려는 사용자 지정 properties 소스가 있을 수 있습니다. 다음과 같이 진행하려면, 사용자의 `PropertySource` 를 인스턴스화 하고 구현해야 한다. 그리고 현재 `Environment`를 위해 일련의 `PropertySources`에 `PropertySource`를 추가해야 한다. 다음의 예제는 어떻게 사용하는지에 대해서 보여준다.
+
+```java
+public static void main(String[] args){
+   ConfigurableApplicationContext ctx = new GenericApplicationContext();
+   MutablePropertySources sources = ctx.getEnvironment().getPropertySources();
+   sources.addFirst(new MyPropertySources());
+}
+```
+
+위의 코드에서, `MyPropertySource` 는 검색에 가장 높은 우선순위로써 추가되어 졌다. `MyPropertySource`가 
+`my-property` property를 포함한다면 탐색 되어지고 리턴되어질 것입니다. `MutablePropertySources` API는 일련의 property 소스를 정확하게 조작(manipulation) 할 수 있는 많은 메서드를 제공합니다.
 
 
 
