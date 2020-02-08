@@ -308,6 +308,79 @@ public static void main(String[] args){
 위의 코드에서, `MyPropertySource` 는 검색에 가장 높은 우선순위로써 추가되어 졌다. `MyPropertySource`가 
 `my-property` property를 포함한다면 탐색 되어지고 리턴되어질 것입니다. `MutablePropertySources` API는 일련의 property 소스를 정확하게 조작(manipulation) 할 수 있는 많은 메서드를 제공합니다.
 
+---
+
+### 1.13.3 Using `@PropertySource`
+
+**`@PropertySource` 애노테이션은 `PropertySource`를 Spring의 `Environment`에 추가하기 위해 편리하고 선언적인 메커니즘을 제공한다.**
+
+키-값 쌍인 `testbean.name=myTestBean`를 포함하는 `app.properties`가 호출되어지는 파일이 주어졌고, 다음의 `@Configuration` 클래스는 `testBean.getName()`호출이 `myTestBean` 을 리턴하는 방식으로  `@PropertySource` 애노테이션을 사용하였다.
+
+```java
+@Configuration
+@PropertySource("classpath:/com/myco/app.properties")
+public class AppConfig {
+	
+   @Autowired
+   Environment evn;
+   
+   @Bean
+   public TestBean testBean() {
+      TestBean testBean = new TestBean();
+      testBean.setName(env.getProperty("testbean.name"));
+      return testBean;
+   }
+}
+```
+
+`@PropertySource` 리소스 위치에 존재하는 모든 `${...}` 는 환경에 이미 등록된 property 소스 집합에 대해서 분석됩니다.
+다음 예제에서 참고해 보자.
+
+```java
+@Configuration
+@PropertySource("classpath:/com/${my.placeholder:default/path}/app.properties")
+public class AppConfig {
+   
+   @Autowired
+   Environment env;
+   
+   @Bean
+   public TestBean testBean() {
+      TestBean testBean = new TestBean();
+      testBean.setName(env.getProperty("testbean.name"));
+      return testBean;
+   }
+}
+```
+
+이미 등록된 property 소스(예, system properties 또는 environment variables) 중 하나에 `my.placeholder`가 존재한다고 가정하면, placeholder는 일치하는 값으로 분석 되어질 것이다. 만약 그렇지 않으면 `default/path`는 기본값으로써 사용되어 질 것이다. 만약 어떠한 기본값도 정의되어 있지 않고 property가 분석되어질 수 없다면, `IllegalArgumentsException` 예외가 던져질 것이다.
+
+> **`@PropertySource` 애노테이션은 Java 8 규칙에 따라서 반복할 수 있다. 그러나 모든 `@PropertySource` 애노테이션들은 구성 클래스에서 직접 또는 동일한 사용자 애노테이션 내에서 meta-annotations로 동일한 레벨에서 선언되어야 한다. 직접적인 애노테이션은 meta-annotations를 오버라이드 하기 때문에  직접적인 애노테이션과 meta-annotations의 혼합은 추천되지 않는다.** 
+
+---
+
+### 1.13.4 Placeholder Resolution in Statements
+
+역사적으로, 요소의 placeholders의 값은 오직 JVM 시스템 properties 또는 environment vaiables에 대해서만 분석되어 질 수 있었습니다. 그러나 이것은 더 이상 사실이 아닙니다. **`Environment` Abstraction는 전체 Container에 통합되어 있기 때문에,  이러한 것들을 통해서 placeholders 분석을 더 쉽게 라우팅 할 수 있습니다.** 이러한 사실은 개발자가 좋아하는 방법으로 분석 프로세스를 설정할 수 있다는 것을 의미합니다. 개발자는 system properties 와 환경 변수 또는 그것들을 전체 삭제하는 것을 통해서 검색 순위를 변화할 수 있습니다. 또한 개발자는 mix에 사용자의 property 소스를 적절하게 추가할 수도 있습니다.
+
+구체적으로, 다음의 예제는 `Environment` 에서 사용 가능 한 경우 `customer` property가 정의된 위치에 관계없이 작동합니다.
+
+```xml
+<beans>
+    <import resource="com/bank/service/${customer}-config.xml"/>
+</beans>
+```
+
+
+
+
+
+
+
+
+
+
+
 
 
 
