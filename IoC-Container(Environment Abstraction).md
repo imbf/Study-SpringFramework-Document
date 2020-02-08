@@ -101,6 +101,98 @@ public @interface Production {
 
 > **만약 `@Configuration` 클래스가 `@Profile` 애노테이션이 붙여져 있다면 모든 `@Bean` 메소드와 `@Import` 애노테이션과 연관된 해당 클래스들은 하나이상의 특정한 Profile이 활성화 되지 않는다면 무시되어진다(bypassed).** 만약 `@Component` 또는 `@Configuration` 클래스가 `@Profile({"p1", "p2"})` 애노테이션으로써 표시되어져 있다면, 해당 클래스는 profile "p1" 또는 "p2"가 활성화 되지 않는 한(unless) 등록되어지거나 또는 처리되어지지 않는다. 만약 주어진 profile이 Not 연산자(`!`)가 앞에 붙어 있다면, 어노테이션이 붙여진 요소들은 오직 해당 profile이 활성화 되지 않을 때 등록되어질 것입니다. 예로들어, `@Profile({"p1", "!p2"})`가 요소에 붙여 졌을 때, 등록은 profile "p1"이 활성화 되거나 또는 profile "p2"가 활성화 되지 않으면 발생할 것입니다.
 
+**`@Profile` 애노테이션은 configuration 클래스에서 오직 특정한 Bean을 포함하기 위해서 메소드 레벨에서 선언되어질 수 있습니다.** (예로들어, 특정한 Bean에 대한 대체 변동을 위해), 다음의 예제에서 보여줍니다.
+
+```java
+@Configuration
+public class AppConfig {
+
+   @Bean("dataSource")
+   @Profile("development") // (1)
+   public DataSource standaloneDataSource(){
+      return new EmbeddedDatabaseBuilder()
+         .setType(EmbeddedDatabaseType.HSQL)
+         .addScript("classpath:com/bank/cofig/sql/schema.sql")
+         .addScript("classpath:com/bank/config/sql/test-data.sql")
+         .build()
+   }
+   
+   @Bean("dataSource")
+   @Profile("production") // (2)
+	public DataSource jndiDataSource() throws Exception {
+      Context ctx = new InitialContext();
+      return (DataSource) ctx.lookup("java:comp/env/jdbc/datasource");
+   }
+}
+```
+
+1. `standaloneDataSource` 메소드는 오직 `development` profile에서만 사용 가능하다. 
+2. `jndiDataSource` 메소드는 오직 `production` profile에서만 사용 가능하다.
+
+> `@Bean` 메소드의 `@Profile` 처럼, 특별한 시나리오가 적용 가능하다 : 동일한 Java 메소드 name의 `@Bean` 메소드가 오버로드된 경우 (생성자 오버로드와 유사(analogous to)), 모든 오버로드된 메소드에서  `@Profile` 조건은 일관되게 선언되어야 한다. **만약 해당 조건이 일관되지 않으면, 오버로드된 메소드 중 첫번째 조건만 중요한 사항이 됩니다. 그러므로 `@Profile`은 특정한 인자로 오버로드된 메소드를 선택하기 위해 사용할 수 없습니다.** 동일한 Bean을 위한 모든 팩토리 메소드들 간의 Resolution은 Spring 생성자 resolution 알고리즘을 생성시간 때 따릅니다.
+>
+> 개발자가 다른 Profile 조건과 함께 대체 Bean을 정의하고 싶다면, 이전 예제에서 보여주는 것 처럼  `@Bean` name 속성을 사용해 동일한 Bean name을 가르키는 고유한 Java 메소드 name을 사용해라. 모든 인자의 특징이 모두 같다면(예로들어, 모든 변형이 인자가 없는 팩토리 메소드를 가진다면), 우선(in the first place) 유효한 자바 클래스에 이러한 배열을 나타내는 유일한 방법 입니다.( 특정한 name과 인자의 특징에 대한 메소드는 하나만 있을 수 있기 때문입니다.)
+
+#### XML Bean Definition Profiles
+
+XML에 대응되는 것은 `<beans>` 요소의 `profile` 속성입니다. 이전 샘플 설정은 다음과 같이 두가지의 XML 파일들로 재 작성 될 수 있습니다.
+
+```xml
+<beans profile="development"
+       xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jdbc="http://www.springframewrok.org/schema/jdbc"
+       xsi:schemaLocation="...">
+	
+   <jdbc:embedded-database id="dataSource">
+   	<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+      <jdbc:script location="classpath:com/bank/config/sql/test-data.sql"/>
+   </jdbc:embedded-database>
+</beans>
+```
+
+```xml
+<beans profile="production"
+       xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jee="http://www.springframnework.org/schema/jee"
+       xsi:schemaLocation="...">
+
+   <jee:jndi-lookup id="dataSource" jndi-name="java:comp/env/jdbc/datasource"/>
+</beans>
+```
+
+다음 예제에서와 같이 동일한 파일에서 `<beans/>` 요소를 중첩하고 분리하는 것을 피할 수 있습니다.
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:jee="http://www.springframework.org/schema/jee"
+       xsi:schemaLocation="...">
+	
+   <!-- 다른 Bean 정의 -->
+   
+   <beans profile="development">
+   	<jdbc:embedded-database id="dataSource">
+      	<jdbc:script location="classpath:com/bank/config/sql/schema.sql"/>
+         <jdbc:script location="clsspath::com/bank/config/sql/test-data.sql"/>
+      </jdbc:embedded-database>
+   </beans>
+   
+   <beans profile="production">
+   	<jee:jndi-lookup id="dataSource" jndi-name="java.comp/env/jdbc/datasource"/>
+   </beans>
+   
+</beans>
+```
+
+
+
+
+
+
+
 
 
 
