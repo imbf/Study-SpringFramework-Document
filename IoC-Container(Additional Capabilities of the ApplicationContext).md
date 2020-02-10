@@ -141,6 +141,70 @@ Ebagum lad, the 'userDao' argument is required, I say, required
 
 ### 1.15.2 Standard and Custom Events
 
+**`ApplicationContext`의 이벤트 핸들링은 `ApplicationEvent` 클래스와 `ApplicationListener` 인터페이스를 통해서 제공되어진다.**  만약 `ApplcationListener` 인터페이스를 구현한 Bean이 context에 배치되어 있다면, `ApplicationEvent`가 `ApplicationContext`에 생성될 때마다 해당 Bean이 통지된다. 이러한 것들은 표준 Observer design pattern 이라고 한다.
+
+> Spring 4.2 부터, 이벤트 인프라는 발전되었고 애노테이션 기반의 모델 뿐만아니라 모든 임의의 이벤트를 발생할 수 있는 능력 또한 제공한다(즉, `ApplicationEvent`로 부터 반드시 상속받을 필요가 없는 객체). 이러한 객체들이 published 될 때 우리는 개발자를 위해서 이벤트 안에 이러한 것들을 랩핑한다.
+
+다음의 테이블을 Spring이 제공하는 표준 이벤트에 대한 설명을 나타낸 것이다.
+
+**Table 7. Built-in Events**
+
+| Event                        | Explanation                                                  |
+| ---------------------------- | ------------------------------------------------------------ |
+| `ContextRefreshedEvent`      | **`ApplicationContext`가 초기화되어지거나 다시 초기화 되어질 때 게시된다.**(예로들어, `ConfigurableApplicatonContext` 인터페이스의 `refresh()`메소드 사용). 여기에서 "initialized" 의 의미는 모든 Bean들이 로딩되었고, post-processore Bean이 탐색되고 활성화 되었고, Singleton Bean이 미리 인스턴스화 되었고 `ApplicationContext`가 사용을 위해서 준비가 된 상태를 가르킨다. context가 소멸되지 않는한, `ApplicationContext`가 실제로 "hot" refresh를 지원하는 경우, refresh는 여러번 유발되어 질 수 있습니다. 예로들어, `XmlWebApplicationContext`는 hot refresh를 지원하지만 `GenericApplicationContext`는 지원하지 않습니다. |
+| `ContextStartedEvent`        | **`ConfigurableApplicationContext` 인터페이스의  `start()` 메소드를 사용해서 `ApplicationContext`가 시작할 때 게시된다.** 여기에서, "started" 의미는 모든 `Lifecycle` Beans이 명확한 시작 신호를 받을 수 있다는 것을 의미한다. 일반적으로, 중단 한 후에 Bean을 재시작하기 위해서 이러한 신호는 사용되지만 자동 시작을 위해 설정되지 않는 Components를 시작하는데 사용되어질 수도 있습니다(예로들어, 초기화시 시작되지 않는 components) |
+| `ContextStoppedEvent`        | **`ConfigurableApplicationContext` 인터페이스에서 `stop()` 메소드를 사용하여 `ApplicationContext`가 중단될 때 게시된다.** 여기서 "stopped" 의미는 모든 `Lifecycle` Bean들은 명확한 stop 신호를 받을 수 있다는 것을 의미한다. 중단된 context는 `start()` 호출을 통해서 재시작되어질 수 있습니다. |
+| `ContextClosedEvent`         | **`ConfigurableApplicationContext` 인터페이스의 `close()` 메소드를 사용함으로써 또는 JVM shutdown hook을 통해서 `ApplicationContext`가 닫혀질 때 게시된다.** 여기에서 "closed"의 의미는 모든 Singleton Bean들은 소멸되어 질 수 있다는 것을 의미한다. Context가 닫혀지면, 수명이 다하여 새로 고치거나 다시시작할 수 없습니다. |
+| `RequestHandledEvent`        | **모든 Beans에 HTTP 요청이 서비스 되었음을 말하는 웹에 특화된 이벤트이다.** 이 이벤트들은 요청이 완료된 후에 생성된다. 이 이벤트는 Spring의 `DispatcherServlet`을 사용하는 웹 어플리케이션에만 오직 적용가능하다. |
+| `ServletRequestHandledEvent` | **서블릿에 특화된 context 정보를 추가한 `RequestHandledEvent`의 서브클래스이다.** |
+
+개발자는 사용자 정의 이벤트를 생성하고 게시할 수 있다. 다음의 예제에서는 Spring의 `ApplicationEvent` 기본 클래스를 상속하는 간단한 클래스를 보여준다.
+
+```java
+public class BlackListEvent extends ApplicationEvent {
+	private final String address;
+   private final String content;
+   
+   public BlackListEvent(Object source, String address, String context){
+      super(source);
+      this.address = address;
+      this.content = content;
+   }
+   
+   // accessor and other methods ...
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
