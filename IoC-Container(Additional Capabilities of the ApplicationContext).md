@@ -158,7 +158,7 @@ Ebagum lad, the 'userDao' argument is required, I say, required
 | `RequestHandledEvent`        | **모든 Beans에 HTTP 요청이 서비스 되었음을 말하는 웹에 특화된 이벤트이다.** 이 이벤트들은 요청이 완료된 후에 생성된다. 이 이벤트는 Spring의 `DispatcherServlet`을 사용하는 웹 어플리케이션에만 오직 적용가능하다. |
 | `ServletRequestHandledEvent` | **서블릿에 특화된 context 정보를 추가한 `RequestHandledEvent`의 서브클래스이다.** |
 
-개발자는 사용자 정의 이벤트를 생성하고 게시할 수 있다. 다음의 예제에서는 Spring의 `ApplicationEvent` 기본 클래스를 상속하는 간단한 클래스를 보여준다.
+개발자는 사용자 정의 이벤트를 생성하고 게시(publish)할 수 있다. 다음의 예제에서는 Spring의 `ApplicationEvent` 기본 클래스를 상속하는 간단한 클래스를 보여준다.
 
 ```java
 public class BlackListEvent extends ApplicationEvent {
@@ -175,23 +175,97 @@ public class BlackListEvent extends ApplicationEvent {
 }
 ```
 
+사용자 정의 `ApplicationEvent`를 게시하기 위해서, `ApplicationEventpublisher` 의 `publishEvent()` 메소드를 호출해야 한다. 일반적으로, 이러한 것들은 `ApplicationEventPublisherAware` 을 구현한 클래스를 생성하고 Spring Bean으로써 이러한 클래스를 등록하면 수행할 수 있다.  다음은 이러한 클래스의 예제를 보여준다.
 
+```java
+public class EmailService implements ApplicationEventPublisherAware {
+   
+   private List<string> blackList;
+   private ApplicationEventPublisher publisher;
+   
+   public void setBlackList(List<String> blackList){
+      this.blackList = blackList;
+   }
+   
+   public void setApplicationEventPublisher(ApplicationEventPublisher publisher){
+      this.publisher = publisher;
+   }
+   
+   public void sendEmail(String address, String content) {
+      if(blackList.contains(address)) {
+         publisher.publishEvent(new BlackListEvent(this, address, content));
+         return;
+      }
+      // send email...
+   }
+   
+}
+```
 
+설정 시간에, Spring Container는 `EmailService`가 `ApplicationEventPublisherAware`를 구현하는 것과 자동적으로 `setApplicationEventPublisher()`를 호출하는 것을 감지한다. 실제로 전달된 매개변수는 Spring Container 자체입니다. 개발자는 Application Context의 `ApplicationEventPublisher` 인터페이스를 통해서 상호작용 합니다.
 
+사용자 정의 `ApplicationEvent`를 수용하기 위해서, 개발자는 `ApplicationListener`를 구현한 클래스를 생성할 수 있고 Spring Bean으로써 등록할 수도 있습니다. 다음의 예제는 이러한 클래스의 예시를 보여줍니다.
 
+```java
+public class BlackListNotifier implements ApplicationListener<BlakcListEvent> {
+   
+   private String notificationAddress;
+   
+   public void setNotificationAddress(String notificationAddress) {
+      this.notificationAddress = notificatonAddress;
+   }
+   
+   public void onApplicationEvent(BlackListEvent event) {
+      // notificationAddress를 통해 적절한 객체(parties)에게 알립니다.
+   }
+}
+```
 
+**`ApplicationListener`는 일반적으로(generically) 사용자 이벤트 타입으로 매개 변수화(parameterized) 된다는 사실을 명심해야 합니다.** (이전 예제에서는 `BlackListEvent`) 이러한 사실은 `onApplicationEvent()`는 **type-safe**를 할 수 있고 다운캐스팅을 위한 어떠한 요구도 피한다는 것을 의미합니다. **개발자는 원하는대로 많은 이벤트 리스너를 등록할 수 있지만 기본적으로 이벤트 리스너는 이벤트를 동기적으로 받는다는 사실을 알고 있어야 합니다.** 이것은 모든 리스너가 이벤트 처리를 완료할 때 까지 `publishEvent()` 메소드가 차단됨을 의미합니다. 이러한 동기적이고 싱글 스레드 접근방법의 한가지 장점은 리스너가 이벤트를 수용했을 때 트랜잭션 context가 사용가능 한 경우 리스너가 publisher의 트랙잭션 컨텍스트 내에서 작동한다는 것입니다. 이벤트 publication에 관한 또 다른 전략이 필요하다면, Spring의 `ApplicationEventMulticaster` 인터페이스와 설정 옵션을 위한 `SimpleApplicationEventMulticaster` 구현을 위해 java document를 참조 해 보세요.
 
+다음 예제는 위의 클래스 각각을 설정하고 등록하는데 사용된 XML 기반의 Bean정의 예제입니다.
 
+```xml
+<bean id="emailService" class="example.EmailService">
+	<property name="blackList">
+   	<list>
+      	<value>known.spammer@example.org</value>
+         <value>known.hacker@example.org</value>
+         <value>john.doe@example.org</value>
+      </list>
+   </property>
+</bean>
 
+<bean id="blackListNotifier" class="example.BlackListNotifier">
+	<property name="notificationAddress" value="blacklist@example.org"/>
+</bean>
+```
 
+`emailService` Bean의 `sendEmail()` 메소드가 호출 될 때 블랙리스트에 올릴 이메일 메시지가 있으면 `BlackListEvent` 유형의 사용자 정의 이벤트가 게시됩니다. `blackListNotifier` Bean은 `ApplicationListener`로써 등록되어지고 `BlackListEvent`를 수용하여, 해당 당사자에게 알려질 수 있습니다.
 
+> Spring의 이벤팅 방법은 동일한 ApplicationContext 내에서 Spring Beans 간에 간단한 의사소통을 위해서 디자인 되었습니다. 그러나 더 복잡한(sophisticated) 기업 통합 요구를 위해, 별도로 유지관리되는 Spring 통합 프로젝트는 경량, 패턴 중심, 잘 알려진 Spring 프로그래밍 모델을 기반으로 하는 이벤트 중심의 아키텍처를 위해 완벽한 지원을 제공합니다.
 
+#### Annotation-based Event Listeners
 
+**Spring 4.2 부터, 개발자는 `@EventListner` 애노테이션을 사용함으로써 관리되는 Bean의 public 메소드에 이벤트 리스너를 등록할 수 있습니다.** `BlackListNotifier`는 다음과 같이 다시 쓰여질 수 있습니다.
 
+```java
+public class BlackListNotifier {
+   
+   private String notioficationAddress;
+   
+   public void setNotificationAddress(String notificationAddress) {
+      this.notificationAddress = notificationAddress;
+   }
+   
+   @EventListener
+   public void processBlackListEvent(BlackListEvent event) {
+      // notificationAddress를 통해서 적절한 당사자에게 알립니다.
+   }
+}
+```
 
-
-
-
+이 메소드의 특징은
 
 
 
