@@ -245,6 +245,12 @@ public class BlackListNotifier implements ApplicationListener<BlakcListEvent> {
 
 > Spring의 이벤팅 방법은 동일한 ApplicationContext 내에서 Spring Beans 간에 간단한 의사소통을 위해서 디자인 되었습니다. 그러나 더 복잡한(sophisticated) 기업 통합 요구를 위해, 별도로 유지관리되는 Spring 통합 프로젝트는 경량, 패턴 중심, 잘 알려진 Spring 프로그래밍 모델을 기반으로 하는 이벤트 중심의 아키텍처를 위해 완벽한 지원을 제공합니다.
 
+> **What is The Java method Signature?**
+>
+> **Java Signature is the Combination of the method name and the parameter list.**
+>
+> <img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200210214457782.png" alt="image-20200210214457782" style="zoom:50%;" />
+
 #### Annotation-based Event Listeners
 
 **Spring 4.2 부터, 개발자는 `@EventListner` 애노테이션을 사용함으로써 관리되는 Bean의 public 메소드에 이벤트 리스너를 등록할 수 있습니다.** `BlackListNotifier`는 다음과 같이 다시 쓰여질 수 있습니다.
@@ -265,15 +271,41 @@ public class BlackListNotifier {
 }
 ```
 
-이 메소드의 특징은
+**이 메소드의 특징은 listen하는 이벤트 타입을 유연한 이름과 특정한 리스너 인터페이스의 구현 없이 다시 선언합니다.** 실제 이벤트 유형이 구현 계층에서 제네릭 인자를 분석하는 한 제네릭을 통해서 이벤트 유형은 범위를 좁힐 수 있습니다.
 
+메소드가 여러 이벤트를 리스닝 해야하거나 또는 전혀(at all) 어떠한 인자도 없이 리스너를 정의하는 것을 원한다면, 이러한 이벤트 타입은 애노테이션 자체에서 정의되어 질 수 있습니다. 다음의 예제는 어떻게 사용하는지에 대해서 알려주는 예제 입니다.
 
+```java
+@EventListener({ContextStartedEvent.class, ContextRefreshedEvent.class})
+public void handleContextStart() {
+   // ...
+}
+```
 
+이러한 이벤트 리스너는  애노테이션의 `condition` 속성을 `SpEL` 표현식으로 정의해서 사용함으로써 추가적인 런타임 필터링을  추가할 수 있습니다.  spEL 표현식은 특정한 이벤트를 위한 메소드의 실질적으로 호출하기 위해 일치해야 합니다.
 
+다음의 예제는 이벤트의 `content` 속성이 `my-event`와 동일하다면 어떻게 notifier를 호출되어지도록 재 작성되는지에 대해서 보여준다.
 
+```java
+@EventListener(condition="#blEvent.content == 'my-event'")
+public void processBlackListEvent(BlackListEvent blEvent) {
+	// notificationAddress를 통해서 적절한 당사자에게 알립니다.   
+}
+```
 
+각 SpEL 표현식은 전용(dedicated) 컨텍스트에 대해 평가됩니다. 다음은 선택적인 이벤트 프로세싱을 위하여 이러한 것들을 사용하기 위해서 context에서 사용가능하도록 만들어진 항목들에 대해서 나열한 테이블이다.
 
+**Talbe 8. Event SpEL available metadata**
 
+| Name            | Location           | Description                                                  | Example                                                      |
+| --------------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Event           | root object        | 실질적인 `ApplicationEvent`                                  | `#root.event` 또는 `event`                                   |
+| Arguments array | root object        | 메소드를 호출하기 위해서 사용되어지는 인자(객체 배열 로써)   | `#root.args` 또는 `args`; 첫 번째 인자를 액세스 하기 위한`args[0]`, ... |
+| Argument name   | evaluation context | 모든 메소드 인자의 name. 어떠한 이유로든 name을 사용할 수 없는 경우 (예, 컴파일 된 바이트 코드에 디버그 정보가 없기 때문에) 개별 인수 `#a<#arg>` 구문을 사용하여 이용할 수도 있습니다. 여기서 `<#arg>`는 인수의 인덱스를 나타냅니다.(0부터 시작) | `#blEvent` 또는 `#a0` ( `#p0` 또는 `#p<#arg>` 인자 표기법을 별명으로써 사용할 수 있다.) |
+
+메소드 특징이 실제로 게시된 임의의 객체를 실제로 참조 하더라도 `#root.event`를 사용하면 unerlying event에 참조할 수 있습니다.
+
+만약 다른 이벤트의 처리 결과로써 이벤트를 게시할 필요가 있다면, 개발자는 
 
 
 
