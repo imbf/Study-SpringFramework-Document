@@ -141,7 +141,7 @@ Ebagum lad, the 'userDao' argument is required, I say, required
 
 ### 1.15.2 Standard and Custom Events
 
-**`ApplicationContext`의 이벤트 핸들링은 `ApplicationEvent` 클래스와 `ApplicationListener` 인터페이스를 통해서 제공되어진다.**  만약 `ApplcationListener` 인터페이스를 구현한 Bean이 context에 배치되어 있다면, `ApplicationEvent`가 `ApplicationContext`에 생성될 때마다 해당 Bean이 통지된다. 이러한 것들은 표준 Observer design pattern 이라고 한다.
+**`ApplicationContext`의 이벤트 핸들링은 `ApplicationEvent` 클래스와 `ApplicationListener` 인터페이스를 통해서 제공되어진다.**  만약 `ApplcationListener` 인터페이스를 구현한 Bean이 context에 배치되어 있다면, `ApplicationEvent`가 `ApplicationContext`에 게시될 때마다 해당 Bean이 통지된다. 이러한 것들은 표준 Observer design pattern 이라고 한다.
 
 > Spring 4.2 부터, 이벤트 인프라는 발전되었고 애노테이션 기반의 모델 뿐만아니라 모든 임의의 이벤트를 발생할 수 있는 능력 또한 제공한다(즉, `ApplicationEvent`로 부터 반드시 상속받을 필요가 없는 객체). 이러한 객체들이 published 될 때 우리는 개발자를 위해서 이벤트 안에 이러한 것들을 랩핑한다.
 
@@ -158,7 +158,7 @@ Ebagum lad, the 'userDao' argument is required, I say, required
 | `RequestHandledEvent`        | **모든 Beans에 HTTP 요청이 서비스 되었음을 말하는 웹에 특화된 이벤트이다.** 이 이벤트들은 요청이 완료된 후에 생성된다. 이 이벤트는 Spring의 `DispatcherServlet`을 사용하는 웹 어플리케이션에만 오직 적용가능하다. |
 | `ServletRequestHandledEvent` | **서블릿에 특화된 context 정보를 추가한 `RequestHandledEvent`의 서브클래스이다.** |
 
-개발자는 사용자 정의 이벤트를 생성하고 게시(publish)할 수 있다. 다음의 예제에서는 Spring의 `ApplicationEvent` 기본 클래스를 상속하는 간단한 클래스를 보여준다.
+**개발자는 사용자 정의 이벤트를 생성하고 게시(publish)할 수 있다.** 다음의 예제에서는 Spring의 `ApplicationEvent` 기본 클래스를 상속하는 간단한 클래스를 보여준다.
 
 ```java
 public class BlackListEvent extends ApplicationEvent {
@@ -175,7 +175,7 @@ public class BlackListEvent extends ApplicationEvent {
 }
 ```
 
-사용자 정의 `ApplicationEvent`를 게시하기 위해서, `ApplicationEventpublisher` 의 `publishEvent()` 메소드를 호출해야 한다. 일반적으로, 이러한 것들은 `ApplicationEventPublisherAware` 을 구현한 클래스를 생성하고 Spring Bean으로써 이러한 클래스를 등록하면 수행할 수 있다.  다음은 이러한 클래스의 예제를 보여준다.
+사용자 정의 `ApplicationEvent`를 게시하기 위해서, `ApplicationEventpublisher` 의 `publishEvent()` 메소드를 호출해야 한다. 일반적으로, 이러한 것들은 `ApplicationEventPublisherAware` 을 구현한 클래스를 생성하고 Spring Bean으로써 `ApplicationEventPublisher`를 등록하면 수행할 수 있다.  다음은 이러한 클래스의 예제를 보여준다.
 
 ```java
 public class EmailService implements ApplicationEventPublisherAware {
@@ -207,7 +207,7 @@ public class EmailService implements ApplicationEventPublisherAware {
 사용자 정의 `ApplicationEvent`를 수용하기 위해서, 개발자는 `ApplicationListener`를 구현한 클래스를 생성할 수 있고 Spring Bean으로써 등록할 수도 있습니다. 다음의 예제는 이러한 클래스의 예시를 보여줍니다.
 
 ```java
-public class BlackListNotifier implements ApplicationListener<BlakcListEvent> {
+public class BlackListNotifier implements ApplicationListener<BlackListEvent> {
    
    private String notificationAddress;
    
@@ -258,9 +258,9 @@ public class BlackListNotifier implements ApplicationListener<BlakcListEvent> {
 ```java
 public class BlackListNotifier {
    
-   private String notioficationAddress;
+   private String notificationAddress;
    
-   public void setNotificationAddress(String notificationAddress) {
+   public void setNotificationAddress(String notificationAddress){
       this.notificationAddress = notificationAddress;
    }
    
@@ -271,7 +271,7 @@ public class BlackListNotifier {
 }
 ```
 
-**이 메소드의 특징은 listen하는 이벤트 타입을 유연한 이름과 특정한 리스너 인터페이스의 구현 없이 다시 선언합니다.** 실제 이벤트 유형이 구현 계층에서 제네릭 인자를 분석하는 한 제네릭을 통해서 이벤트 유형은 범위를 좁힐 수 있습니다.
+**이 method signature는 listen하는 이벤트 타입을 유연한 이름과 특정한 리스너 인터페이스의 구현 없이 다시 선언합니다.** 실제 이벤트 유형이 구현 계층에서 제네릭 인자를 분석하는 한 제네릭을 통해서 이벤트 유형은 범위를 좁힐 수 있습니다.
 
 메소드가 여러 이벤트를 리스닝 해야하거나 또는 전혀(at all) 어떠한 인자도 없이 리스너를 정의하는 것을 원한다면, 이러한 이벤트 타입은 애노테이션 자체에서 정의되어 질 수 있습니다. 다음의 예제는 어떻게 사용하는지에 대해서 알려주는 예제 입니다.
 
@@ -301,11 +301,71 @@ public void processBlackListEvent(BlackListEvent blEvent) {
 | --------------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | Event           | root object        | 실질적인 `ApplicationEvent`                                  | `#root.event` 또는 `event`                                   |
 | Arguments array | root object        | 메소드를 호출하기 위해서 사용되어지는 인자(객체 배열 로써)   | `#root.args` 또는 `args`; 첫 번째 인자를 액세스 하기 위한`args[0]`, ... |
-| Argument name   | evaluation context | 모든 메소드 인자의 name. 어떠한 이유로든 name을 사용할 수 없는 경우 (예, 컴파일 된 바이트 코드에 디버그 정보가 없기 때문에) 개별 인수 `#a<#arg>` 구문을 사용하여 이용할 수도 있습니다. 여기서 `<#arg>`는 인수의 인덱스를 나타냅니다.(0부터 시작) | `#blEvent` 또는 `#a0` ( `#p0` 또는 `#p<#arg>` 인자 표기법을 별명으로써 사용할 수 있다.) |
+| Argument name   | evaluation context | 모든 메소드 인자의 name. 어떠한 이유로든 name을 사용할 수 없는 경우 (예, 컴파일 된 바이트 코드에 디버그 정보가 없기 때문에) 개별 인수 `#a<#arg>` 구문을 사용하여 이용할 수도 있습니다. 여기서 `<#arg>`는 인수의 인덱스를 나타냅니다(stand for).(0부터 시작) | `#blEvent` 또는 `#a0` ( `#p0` 또는 `#p<#arg>` 인자 표기법을 별명으로써 사용할 수 있다.) |
 
-메소드 특징이 실제로 게시된 임의의 객체를 실제로 참조 하더라도 `#root.event`를 사용하면 unerlying event에 참조할 수 있습니다.
+method signature가 게시된 임의의 객체를 실제로 참조하더라도, `#root.event`를 사용해서 unerlying event에 접근할 수 있습니다.
 
-만약 다른 이벤트의 처리 결과로써 이벤트를 게시할 필요가 있다면, 개발자는 
+만약 다른 이벤트의 처리 결과로써 이벤트를 게시할 필요가 있다면, 개발자는 게시되어야만 하는 이벤트를 리턴하기 위해 method signature를 바꿀 수 있다. 다음 예제에서 보여준다.
+
+```java
+@EventListener
+public ListUpdateEvent handleBlackListEvent(BlackListEvent event) {
+	//notificationAddress를 통해서 적절한 당사자에게 전달된다 그리고 ListUpdateEvent를 게시합니다.
+}
+```
+
+> 이러한 기능은 asynchronous listeners를 위해서는 지원되지 않습니다.
+
+이러한 새로운 메소드는 위의 메소드로 핸들링 되어지는 모든 `BlackListEvent`를 위해서 새로운 `ListUpdateEvent`가 게시됩니다. 만약 개발자가 여러개의 이벤트를 게시하고 싶다면, 이벤트의 `Collection`을 리턴할 수도 있습니다.
+
+#### Asynchronous Listeners
+
+만약 이벤트를 비동기적으로 처리하는 특정 리스터가 필요하다면, 개발자는 일반적인 `@Async` 지원을 다음 예제와 같이 재 사용 할 수 있습니다.
+
+```java
+@EventListener
+@Async
+public void processBlackListEvent(BlackListEvent event){
+   // 별도의(separate) 스레드에서 BlackListEvent가 처리되어집니다.
+}
+```
+
+비동기적 이벤트를 사용할 때 다음의 제한에 대해서는 알아야 합니다.
+
+- 만약 비동기전인 에러가 `Exception`을 던진다면, 이러한 예외는 호출자에게 전파되어(propagated)지지 않습니다. 더 많은 정보를 위해서 `AsyncUncaughtExceptionHandler`에 대해서 참조하세요.
+- 비동기적 이벤트 리스너 메소드들은 값을 리턴해서 순차적인 이벤트 게시가 불가능합니다. 만약 다른 이벤트의 처리 결과로 또 다른 이벤트를 게시하고 싶다면, 수동적으로 이벤트를 게시하기 위해서 `ApplicationEventPublisher`의 의존성을 주입하세요
+
+#### Ordering Listeners
+
+하나의 리스턴가 다른 리스너가 호출 되기전에 먼저 호출되고 싶다면, 개발자는 `@Order` 애노테이션을 메소드 선언에 추가할 수 있습니다. 다음 예제에서 보여줍니다.
+
+```java
+@EventListener
+@Order(42)
+public void processBlackListEvent(BlackListEvent event) {
+   // notificationAddress를 통해서 적절한 당사자에게 통보한다.
+}
+```
+
+#### Generic Events
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
