@@ -379,6 +379,42 @@ public class EntitiyCreatedEvent<T> extends ApplicationEvent implements Resolvab
 
 > 이것은 ApplicationEvent 뿐만 아니라 이벤트로써 보내지는 임의의 객체에서도 작동합니다.
 
+---
+
+### Conveinet Access to Low-level Resources
+
+application contexts의 이해와 최선의 사용을 위해서, 개발자는 Spring의 `Resource` 추상화와 친해져야 한다. Resources에서 묘사되어진다.
+
+Application context는 `ResourceLoader` 이다. `ResourceLoader`는 `Resource` 객체를 로드하기 위해 사용되어진다. `Resource`는 본질적으로 `java.net.URL` 클래스의 기능이 더 풍부한 버전입니다. 사실, `Resource` 클래스의 구현은 `java.net.URL` 인스턴스를 적절하게 랩핑합니다. **`Resource`는 classpath, 파일 시스템 위치, 표준 URL로 설명이 가능한 모든곳,  기타 변형 등 거의 모든 위치에서 저수준 리소스를 얻을 수 있습니다.** 만약 resource location String이 특별한 접두사 없이 매우 간단한 경로라면, 이러한 경로로 부터 오는 자원들은 실제의 application context type에 적절하고 구체적이다.
+
+**특별한 콜백 인터페이스, `ResourceLoaderAware`를 구현하기 위해 application context에 배치되어있는 Bean들을 설정할 수 있고 application context 자체가 `ResourceLoader`로써 전달되어 초기화시에 자동으로 다시 호출됩니다.** 개발자는 정적 리소스에 액세스하는데 사용되어지는 `Resource` 타입의 properties를 노출시킬 수 있다. 그들은 다른 속성과 마찬가지로 주입 되어집니다. 개발자는 간단한 `String` 경로로써 이러한 `Resoure` properties를 명시할 수 있고, Bean이 배치되어질 때 이러한 text String으로부터 실제  `Resource` 객체로의 자동 변환에 의존할 수 있습니다.
+
+`ApplicationContext` 생성자에 제공되어지는 경로 또는 위치 경로들은 실제 리소스 문자열이고, 특별한 context 구현에 따라서 적절하게 다루어 집니다. 예로들어, `ClassPathXmlApplicationContext` 는 classpath location과 같은 간단한 위치 경로를 다룹니다. **실제 context 타입에 상관 없이 classpath 또는 URL로부터 정의를 로드하기 위하여 특별한 접두사를 붙인 위치 경로를 사용할 수 있습니다.**
+
+---
+
+### 1.15.4 Convenient ApplicationContext Instantiation for Web Applications
+
+예로들어, 개발자는 `ContextLoader`를 사용함으로써 `ApplicationContext` 인스턴스를 선언적으로 생성할 수 있다. 물론 `ApplicationContext` 구현 중에서 하나를 사용함으로써 `ApplicationContext`를 프로그램적으로 생성할 수 있다.
+
+개발자는 `ContextLoaderListener`를 사용함으로써 `ApplicationContext`를 등록할 수 있다. 다음 예제에서 보여준다.
+
+```xml
+<context-param>
+	<param-name>contextConfigLocation</param-name>
+   <param-value>/WEB-INF/daoContext.xml /WEB-INF/applicationContext.xml</param-value>
+</context-param>
+
+<listener>
+	<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+</listener>
+```
+
+리스너는 `contextConfigLocation` 인자를 검사한다. 만약 인자가 존재하지 않다면, 릴스너는 기본적으로 `/WEB-INF/applicationContext.xml`을 기본적으로 사용한다. parameter가 존재한다면, 리스너는 미리 정의된 delimters(comma, semicolon, and whitespace)를 사용해서 `String`을 분리하고, application contexts가 검색하는 위치로써 찾은 값들을 사용한다. Ant-style path patterns는 잘 지원된다. 예로들어, `/WEB-INF/*Context.xml`( `Context.xml`로 이름이 끝난 모든 파일) 과 `/WEB-INF/**/*Context.xml`( `WEB-INF` 의 하위 디렉토리에 있는 Context.xml로 끝나는 모든 파일)
+
+---
+
+### 1.15.5 Deploying a Spring `ApplicationContext` as a Java EE RAR File
 
 
 
@@ -402,4 +438,4 @@ public class EntitiyCreatedEvent<T> extends ApplicationEvent implements Resolvab
 
 
 
-
+ 
