@@ -1,6 +1,6 @@
 # 1.16 The `BeanFactory`
 
-`BeanFactory` API는 Spring의 IoC 기능을 위한 기초를 제공한다. `BeanFactory`의 특정 계약은 Spring의 다른 부분 및 다른 관련 프레임워크와의 통합에 사용되며, 이것의 `DefaultListableBeanFactory` 구현은 상위 레벨 `GenericApplicationContext` 컨테이너 내의 주요 대표자 입니다.
+`BeanFactory` API는 Spring의 IoC 기능을 위한 기초를 제공한다. `BeanFactory`의 특정 계약은 Spring의 다른 부분 및 다른 관련 프레임워크와의 통합에 사용되며,`DefaultListableBeanFactory` 구현은 상위 레벨 `GenericApplicationContext` 컨테이너 내의 주요 대표자 입니다.
 
 `BeanFactory` 와 관련된 인터페이스들(`BeanFactoryAware`, `InitializingBean`, `DisposableBean`)은 다른 프레임 구성요소를 위한 주요한 통합 지점이다. 어떠한 애노테이션 또는 어떠한 리플렉션이 필요하지 않음으로, 컨테이너와 이것의 구성요소간에 매우 효율적인 상호작용이 가능합니다. 어플리케이션 레벨의 Beans는 같은 콜백 인터페이스를 사용하지만 일반적으로 선언적인(어노테이션 또는 프로그램적인 설정을 통한) 의존성 주입을 선호합니다. 
 
