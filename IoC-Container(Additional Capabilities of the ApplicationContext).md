@@ -416,6 +416,37 @@ Application context는 `ResourceLoader` 이다. `ResourceLoader`는 `Resource` �
 
 ### 1.15.5 Deploying a Spring `ApplicationContext` as a Java EE RAR File
 
+Spring의 `ApplicationContext`는 RAR 파일로써 배치할 수 있고, Java EE RAR deployment unit에 필요한 Bean 클래스들과 라이브러리 모두와 context를 캡슐화 할 수 있다. Java EE 서버 기능(facility)에 엑세스 할 수 있는 독립형 `ApplicationContext`(Java EE 환경에서만 호스팅)을 bootstrapping하는 것과 동일합니다. RAR 배포는 headless WAR 파일 배포 시나리오에 대한 더 자연스러운 대안입니다. 실제로 Java EE 환경에서 Spring `ApplicationContext` bootstrapping 하는데에만 사용되어지는 HTTP 진입 점이 없는 WAR 파일입니다.
+
+RAR 배포는 HTTP 진입점이 필요하지 않고 메세지 endpoints와 예약된 작업으로만 구성된 application contexts에 적합합니다. 이러한 Context에 존재하는 Bean들은 어플리케이션 서버 리소스(ex. JTA transaction manager, JNDI-bound JDBC `DataSource` instances, JMS `ConnectionFactory` 인스턴스) 로 사용되어 질 수 있고, JMS 플랫폼 서버에 등록할 수 있습니다.(스프링의 표준 트랜잭션 관리, JNDI, JMX 지원 기능을 통해). 어플리케이션 components는 어플리케이션 서버의 JCA `WorkManager`와 Spring의 `TaskExecutor` 추상화를 통해서 상호작용 할 수 있다.
+
+RAR 배포를 포함하는 설정 세부정보를 위해서 java document의 `SpringContextResourceAdapter` 클래스를 참고 해 보세요.
+
+Java EE RAR 파일로써 Spring ApplicationContext의 간단한 배포를 위해서
+
+1. RAR파일(다른 파일의 확장을 위한 표준 JAR파일)에 모든 어플리케이션 클래스들을 패키징해라.
+   필요한 모든 라이브러리를 RAR archive의 루트에 추가해라.
+   `META-INF/ra.xml` deployment descriptor(`SpringContextResourceAdapter`을 위해 javadoc에서 볼 수 있다.) 과 일치하는 Spring XML Bean 파일들(일반적으로 `META-INF/applicationContext.xml`)을 추가해라
+2. 어플리케이션 서버의 배포 디렉토리에 RAR 파일의 결과를 떨어뜨려라(배치해라).
+
+> 이러한 RAR 배포 유닛은 일반적으로 독립적(self-contained)입니다. 그들은 외부로 심지어는 같은 어플리케이션의 모듈들 에게도 이러한 components들을 노출시키지 않습니다. RAR 기반의 `ApplicationContext`와 상호작용은 보통 다른 모듈과 공유하는 JMS destination을 통해서 발생한다. 예로들어 RAR기반의 `ApplicationContext`은 파일 시스템의 일부 작업을 예약하거나 새로운 파일에 반응할 수 있습니다. 만약 외부로부터 동기적인 접근을 허용하고 싶다면, 같은 머신의 다른 어플리케이션 모듈에 사용되어지는 RMI endpoints를 exports할 수 있습니다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
