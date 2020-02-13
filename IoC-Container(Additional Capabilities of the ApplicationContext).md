@@ -349,11 +349,35 @@ public void processBlackListEvent(BlackListEvent event) {
 
 #### Generic Events
 
+**개발자는 제네릭을 사용해서 이벤트 구조를 추가적으로 정의할 수 있습니다.** `EntitiyCreatedEvent<T>`를 사용하는 것을 고려 해보아라. `EntitiyCreatedEvent<T>` 에서 `T`는 실제 생성되는 엔티티의 타입을 의미한다. 예로들어, `Person` 을 위한 오직 `EntitiyCreatedEvent`를 받기 위한 다음의 정의를 생성할 수 있습니다.
 
+```java
+@EventListener
+public void onPersonCreated(EntityCreatedEvent<Person> event) {
+   // ...
+}
+   
+```
 
+타입 삭제 때문에, 발생하는 이벤트가 이벤트 리스너가 필터링하는 제네릭변수를 분석하는 경우에만 위의 이벤트 리스너가 작동한다. (즉, `class PersonCreatedEvent extends EntitiyCreatedEvent<Person>{...}`).
 
+특정한 환경에서, 모든 이벤트들이 같은 구조를 따른다면(앞의 예제에서 이벤트의 경우와 마찬가지로) 이러한 것들은 꽤 지루할(tedious) 것이다. **이러한 경우에, 런타임 환경이 제공하는 것 이상으로(beyond) 프레임 워크를 가이드하기 위해 `ResolvableTypeProvider`를 구현할 수 있습니다.** 다음 예제에서 어떻게 구현하는지에 대해서 알려줍니다.
 
+```java
+public class EntitiyCreatedEvent<T> extends ApplicationEvent implements ResolvableTypeProvider {
+   
+   public EntitiyCreatedEvent(T entitiy) {
+      super(entity);
+   }
+   
+   @Override
+   public ResolvableType getResolvableType() {
+      return ResolvableType.forClassWithGenerics(getClass(), ResolvableType.forInstance(getSource()));
+   }
+}
+```
 
+> 이것은 ApplicationEvent 뿐만 아니라 이벤트로써 보내지는 임의의 객체에서도 작동합니다.
 
 
 
