@@ -59,9 +59,10 @@ public interface InputStreamSource {
 `Resource` 인터페이스로부터의 몇가지의 가장 중요한 메소드는 다음과 같다.
 
 - `getInputStream()` : 리소스를 찾아서 열고, 리소스에서 읽기 위한 `InputStream`을 반환한다. 각각의 호출은 새로운 `InputStream`을 리턴합니다. stream을 닫는건 호출자의 책임입니다.
+
 - `exists()` : 
-- `isOpen()` : 
-- `getDescription()` : 
+
+  
 
 
 
