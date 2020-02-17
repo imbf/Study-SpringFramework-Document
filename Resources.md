@@ -77,9 +77,31 @@ public interface InputStreamSource {
 >
 > <img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200217195546653.png" alt="image-20200217195546653" style="zoom:50%;" />
 >
-> 
+> <img src="/Users/baejongjin/Library/Application Support/typora-user-images/image-20200217200850317.png" alt="image-20200217200850317" style="zoom:50%;" />
+>
+> 자바 플랫폼은 위의 그림과 같이 응용프로그램에서 바이트 단위나 문자 단위로 스트림 입출력을 할 수 있는 다양한 클래스를 제공한다. 바이트 스트림을 다루는 클래스는 공통적으로 이름 뒤에 **Stream**을 붙이고, 문자 스트림을 다루는 클래스는 **Reader/Writer**를 붙여 구분한다.
+>
+> 메모장으로 작성된 텍스트 파일이나 자바 소스 파일 같이 문자들로만 이루어진 파일을 읽고 쓰는 경우, 문자 스트림 클래스(FileReader, FileWriter)나 바이트 스트림 클래스(FileInputStream, FileOutStream) 모두 사용 가능하지만, 이미지나 오디오/비디오 파일의 데이터는 문자가 아닌 바이너리 정보들이므로, 이들을 읽거나 쓰는 경우 반드시 바이트 스트림 클래스(FileInputStream, FileOutputStream)를 사용해야 한다.
+>
+> ##### 스트림 연결
+>
+> **스트림은 서로 연결될 수 있다.** 자바 응용프로그램에서 바이트 스트림과 문자 스트림을 연결하여 사용해보자. <u>다음은 키보드로부터 문자를 입력받기 위해 표준 입력 스트림인 **System.in**과 **InputStreamReader** 스트림 객체를 연결하는 코드이다.</u>
+>
+> ```java
+> InputStreamReader rd = new InputStreamReader(System.in);
+> ```
+>
+> 이 코드는 문자 스트림 rd를 생성하고, 키보드와 연결된 표준 입력 스트림인 System.in을 연결한다. System.in은 InputStream 타입으로 바이트 입력 스트림이다. 이렇게 두 스트림이 연결되면 System.in은 사용자의 키 입력을 받아 바이트 스트림으로 내보내며, rd는 들어오는 바이트 스트림을 문자로 구성하여 응용프로그램에게 전달한다. 자바 응용 프로그램은 다음과 같이 rd.read()를 통해 사용자가 입력한 문자를 읽을 수 있다.
+>
+> ```java
+> int c = rd.read();	// 입력 스트림으로부터 키 입력. c는 입력된 키의 문자 값
+> ```
 >
 > 
+
+
+
+
 
 `Resource` 인터페이스로부터의 몇가지의 가장 중요한 메소드는 다음과 같다.
 
