@@ -18,38 +18,6 @@
 
 ---
 
-## 2.2 The Resource Interface
-
-**Spring의 `Resource` 인터페이스는 저수준의 리소스에 접근을 추상화 하기위한 보다 더 유용한 인터페이스를 의미합니다.** 다음의 리스트는 `Resource` 인터페이스 정의를 보여준다.
-
-```java
-public interface Resource extends InputStreamSource {
-   
-   boolean exists();
-   
-   boolean isOpen();
-   
-   URL getURL() throws IOException;
-   
-   File getFile() throws IOException;
-   
-   Resource createRelative(String relativePath) throws IOException;
-   
-   String getFilename();
-   
-   String getDescription();
-}
-```
-
-`Resource` 인터페이스의 정의에서 보여준 것처럼, 위 인터페이스는 `InputStreamSource` 인터페이스를 상속한다. 다음의 예제는 `InputStreamSource` 인터페이스의 정의를 보여준다.
-
-```java
-public interface InputStreamSource {
-
-   InputStream getInputStream() throws IOException;
-}
-```
-
 > #### **스트림(컴퓨팅)** - Wiki
 >
 > 컴퓨터 처리 환경에서 **스트림(stream)**은 시간이 지남에 따라 사용할 수 있게 되는 <u>일련의 데이터 요소를 가리키는 수 많은 방식</u>에서 쓰인다.
@@ -140,15 +108,75 @@ public interface InputStreamSource {
 > int c = rd.read();	// 입력 스트림으로부터 키 입력. c는 입력된 키의 문자 값
 > ```
 
+---
 
+## 2.2 The Resource Interface
 
+**Spring의 `Resource` 인터페이스는 저수준의 리소스에 접근을 추상화 하기위한 보다 더 유용한 인터페이스를 의미합니다.** 다음의 리스트는 `Resource` 인터페이스 정의를 보여준다.
 
+```java
+public interface Resource extends InputStreamSource {
+   
+   boolean exists();
+   
+   boolean isOpen();
+   
+   URL getURL() throws IOException;
+   
+   File getFile() throws IOException;
+   
+   Resource createRelative(String relativePath) throws IOException;
+   
+   String getFilename();
+   
+   String getDescription();
+}
+```
+
+`Resource` 인터페이스의 정의에서 보여준 것처럼, 위 인터페이스는 `InputStreamSource` 인터페이스를 상속한다. 다음의 예제는 `InputStreamSource` 인터페이스의 정의를 보여준다.
+
+```java
+public interface InputStreamSource {
+
+   InputStream getInputStream() throws IOException;
+}
+```
 
 `Resource` 인터페이스로부터의 몇가지의 가장 중요한 메소드는 다음과 같다.
 
-- `getInputStream()` : 리소스를 찾아서 열고, 리소스에서 읽기 위한 `InputStream`을 반환한다. 각각의 호출은 새로운 `InputStream`을 리턴합니다. stream을 닫는건 호출자의 책임입니다.
+- `getInputStream()` : 리소스를 찾아서 열고, 리소스를 읽기 위한 `InputStream`을 반환한다. 각각의 호출은 새로운 `InputStream`을 리턴합니다. stream을 닫는건 호출자의 역할입니다.
+- `exists()` : 물리적인 형태에서 이러한 리소스가 실제로 존재하는지 가리키는 `boolean`을 리턴합니다.
+- `isOpen()` : 리소스가 열린 스트림을 가진 핸들을 나타내는지 여부를 가리키는 `boolean`을 리턴합니다. 만약 `true` 라면, `InputStream`은 여러번 읽혀지지 못하고 무조건 오직 한번만 읽혀질 것이다. 그리고 리소스 유출을 피하기 위해 닫혀질 것이다. `InputStreamResource`를 제외한 모든 일반적인 리소스 구현에 `false`를 리턴 한다.
+- `getDescription()` :  이 리소스에 대한 설명을 리턴하고 리소스를 작성할 때 에러 발생을 위해서 사용되어질 것입니다. 이것은 종종 완전한 qualifed 파일 이름 또는 리소스의 실제 URL 입니다.
 
-- `exists()` : 
+**다른 메소드들은 개발자가 리소스를 나타내는 `File` 객체 또는 실제 `URL`을 얻게 한다.**(만약 기본적인 구현이 호환가능하고 해당 기능을 지원한다면)
+
+Spring자체는 `Resource` 추상화를 광범위하게 사용한다. 리소스가 필요할 때 많은 메소드 시그니쳐(메소드 이름 + 인자)에서 argument type으로써 Spring은 Resource 추상화를 광범위하게 사용한다. Spring API에서 다른 메소드들(다양한 `ApplicationContext` 구현에 대한 생성자)는 `String` 을 가져옵니다. 간단한 형식의 `String` 또는 간단한 폼은 해당 context 구현에 적합한 리소스를 생성하는데 사용 되거나 또는 문자열 경로의 접두사를 통해서 호출자가 특정 자원 구현을 생성하고 사용하도록 지정할 수 있습니다. (매우 어려우니까 다시 한번 복습하자!!!)
+
+**`Resource` 인터페이스는 Spring에 의해서 또는 Spring과 함께 많이 사용되지만, 코드가 Spring의 다른 모든 부분에 대해 알지 못하거나 신경쓰지 않을 때 조차도 리소스에 접근을 위해서 자체 코드에서 일반적인 유틸리티 클래스로써 자체적으로 사용하는 것이 매우 유용합니다.** 이것은 코드를 Spring에 연결 짓는 반면에, 이것은 실제로 유틸리티 클래스의 작은 세트에만 결합합니다. 이 유틸리티 세트는 URL을 위한 유능한 대체제를 제공하며 이러한 목적으로 사용하는 다른 라이브러리와 동등한 것으로 간주될 수 있습니다.
+
+> `Resource` 추상화는 기능을 바꾸지 않습니다. 가능하면 이를 감쌉니다. 예로들어, `UrlResource`는 URL을 감싸고 이러한 작업을 하기 위해서 강싸진 URL을 사용합니다.
+
+---
+
+## 2.3 Built-in Resource Implementations
+
+Spring은 다음의 `Resource` 구현을 포함합니다.
+
+- UrlResource
+- ClassPathResource
+- FileSystemResource
+- ServletContextResource
+- InputStreamResource
+- ByteArrayResource
+
+### 2.3.1 `UrlResource`
+
+**`UrlResource`는 `java.net.URL`을 감싸고 일반적으로 files, HTTP target, FTP target 등의 URL로 일반적으로 접근할 수 있는 모든 객체에 접근하기 위해 사용되어집니다.** 모든 URL들은 표준화된 `String` 표현식을 가지고 있습니다. 적절히 표준화된 접두사는 다른 것들로부터 하나의 URL 타입을 가르키기 위해 사용되어진다. 이러한 것들은 파일시스템 경로를 접근하기 위한 `file:`, HTTP 프로토콜을 통해 리소스에 접근하기위한 `http:`, FTP를 통해 레소스에 접근하기 위한 `ftp:` 등을 포함한다.
+
+**`UrlResource`는 명쾌하게 `UrlResource` 생성자를 사용하기 위해 Java code에 의해서 생성되지만 경로를 나타내는 문자열 인수를 가지는 API(`PropertyEditor`) 메소드가 호출 할 때 종종 암시적으로 생성됩니다.** 후자의 경우, JavaBeans `PropertyEditor`는 궁극적으로 어떠한 타입의 `Resource`를 생성할지 결정합니다. 만약 문자열 경로가 잘 알려진 접두사(ex. `classpath:`)를 포함한다면, 해당 접두사에 의해 적절하게 특화된 `Resource`를 생성합니다. 그러나 만약 접두사를 인지하지 못한다면, `PropertyEditor`는 String이 표준 URL 문자열이라고 가정하고 `UrlResource`를 생성합니다.
+
+### 2.3.2. ClassPathResource
 
 
 
