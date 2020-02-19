@@ -176,13 +176,35 @@ Spring은 다음의 `Resource` 구현을 포함합니다.
 
 **`UrlResource`는 명쾌하게 `UrlResource` 생성자를 사용하기 위해 Java code에 의해서 생성되지만 경로를 나타내는 문자열 인수를 가지는 API(`PropertyEditor`) 메소드가 호출 할 때 종종 암시적으로 생성됩니다.** 후자의 경우, JavaBeans `PropertyEditor`는 궁극적으로 어떠한 타입의 `Resource`를 생성할지 결정합니다. 만약 문자열 경로가 잘 알려진 접두사(ex. `classpath:`)를 포함한다면, 해당 접두사에 의해 적절하게 특화된 `Resource`를 생성합니다. 그러나 만약 접두사를 인지하지 못한다면, `PropertyEditor`는 String이 표준 URL 문자열이라고 가정하고 `UrlResource`를 생성합니다.
 
-### 2.3.2. ClassPathResource
+### 2.3.2. `ClassPathResource`
 
+**`ClassPathResource` 클래스는 classpath로부터 얻어야하는 리소스를 나타낸다. `ClasspathResource`는 thread context class loader, 지정된 class loader, 지정된 클래스를 사용하여 자원을 로드한다.**
 
+이 `Resource` 구현은 클래스 경로 리소스가 파일 시스템에 있지만(reside in) jar에 상주하고(서블릿 엔진 또는 환경이 무엇이든) 파일 시스템으로 확장되지 않은 클래스 경로 리소스가 아닌 경우 `java.io.File`로써 해결을 지원합니다. 이를 해결하기 위해 다양한 `Resource` 구현은 항상 `java.net.URL`로써 해결책을 지원합니다.
 
+`ClassPathResource`는 `ClassPathResource` 생성자를 명시적으로 사용함으로써 자바 코드에 의해서 생성되지만 종종 경로를 나타내기 위해 `String` 인자를 취하는 API 메소드를 호출할 때 암묵적으로 생성되기도 합니다. 후자의 경우에, JavaBeans `PropertyEditor`는 문자열 경로에 있는 특별한 접두사인 `classpath:`를 인지하고 이러한 경우에  `ClassPathResource`를 생성합니다.
 
+### 2.3.3 `FileSystemResource`
 
+`FileSystemResource`는 `java.io.File`과 `java.nio.file.Path`를 처리하기 위한  `Resource`  구현 입니다. `FilesystemResource`는 `File` 또는 `URL`로써 분석을 지원합니다.
 
+### 2.3.4 `ServletContextResource`
+
+적절한 웹 어플리케이션의 root 디렉토리 내의 상대적인 경로를 해석하는 `ServletContext` 리소스들을 위한 `Resourece` 구현입니다.
+
+`ServletContextResourece`는 스트림 접근과 URL 접근을 항상 지원하지만 웹 어플리케이션 아카이브가 확장되고 자원이 실제로 파일 시스템에 있는 경우에만 `java.io.File` 액세스를 허용합니다. 파일 시스템에서의 확장 여부 또는 데이터베이스와 같은 다른곳에서 또는 JAR로부터에 직접 접근은 Servlet Container에 실제로 의존합니다.
+
+### 2.3.5 `InputStreamResource`
+
+`InputStreamResource`는 주어진 `InputStream`을 위한 `Resource` 구현입니다. 이것은 어떤 특정한 `Resource` 구현이 적용되지 않는 경우에만 사용가능 해야한다. 특히, 가능한 경우 `ByteArrayResource` 또는 파일 기반의 `Resource` 구현을 선호하세요.
+
+다른 `Resource` 구현과 대조적으로, `InputStreamResource`는 이미 열린 리소스에대한 서술자 입니다. 그러므로 `isOpen()` 으로부터 `true`를 리턴합니다. 만약 리소스 서술자를 어디에서나 유지할 필요가 있는 경우 또는 Stream을 여러번 읽어야할 필요가 있는 경우에 `InputStreamResource`를 사용하지 마세요.
+
+### 2.3.6 `ByteArrayResource`
+
+`ByteArrayResource`는 주어진 바이트 배열을 위한 `Resource` 구현입니다. `ByteArrayResource`는 주어진 바이트 배열을 위해서 `ByteArrayInputStream`을 생성합니다.
+
+`InputStreamResource`의 단일 사용에 의지하는(resort to) 것 없이 주어진 바이트 배열로부터의 content를 로딩하기 위해 유용하다.
 
 
 
