@@ -349,7 +349,28 @@ Resource template = ctx.getResource("https://myhost.com/resource/path/myTemplate
 | http:      | `https://myserver/logo.png`      | URL로써 로드                         |
 | (none)     | `/data/config.xml`               | 기본적인 `ApplicationContext`에 의존 |
 
+---
 
+## 2.5 The `ResourceLoaderAware` interface
+
+**`ResourceLoaderAware` 인터페이스는 `ResourceLoader` 참조가 제공 될 것으로 예상되는 구성요소를 식별하는 특별한 콜백 인터페이스 입니다.** 다음의 리스트는 `ResourceLoaderAware` 인터페이스의 정의를 보여줍니다.
+
+```java
+public interface ResourceLoaderAware {
+   
+   void setResourceLoader(ResourceLoader resourceLoader);
+}
+```
+
+클래스가 `ResourceLoaderAware`를 구현하고 Application Context(스프링이 관리하는 Bean으로써)에 배치되어 있을 때, 해당 클래스는 Application Context에 의해서 `ResourceLoaderAware`로써 인지되어진다. 그러면 Application Context는 setResourceLoader(ResourceLoader)를 호출하여 자체적으로 인수를 제공합니다.(Spring의 모든 Application Context는 ResourceLoader 인터페이스를 구현한다는 것을 기억해야한다.)
+
+`ApplicationContext`가 `ResourceLoader`이기 때문에, Bean은 `ApplicationContextAware` 인터페이스를 구현할 수 있고 제공되어진 Application Context를 리소스를 로드하기위해 직접적으로 사용할 수 있습니다. **그러나 일반적으로 필요하다면 특화된 `ResourceLoader` 인터페이스를 사용하는것이 보다 좋은 선택입니다.** 해당 코드는 Resource 로딩 인터페이스(utility 인터페이스로 간주되어질 수 있다)에만 연결되며 전체 Spring ApplicationContext 인터페이스에는 연결되지 않습니다.
+
+어플리케이션 요소에서, `ResourceLoaderAware` 인터페이스를 구현하는 대신에  `ResourceLoader`의 autowiring에 의존할 수 있다. 전통적인 `constructor`과  `byType` autowiring modes(Autowiring Collaborators에서 묘사된)는 각각 생성자 인자(argument) 또는 setter 메소드 매개 변수(parameter)를 위해 `ResourceLoader`를 제공 할 수 있습니다. 더 많은 유연성(여러 필드와 여러개의 parameter methods를 autowire 하기 위한 능력을 포함해)을 위해서, 애노테이션 기반의 autowiring 기능을 사용하는 것을 고려해 보아라. 이러한 경우에, `ResourceLoader`는  해당 필드, 생성자, 또는 메서드가 `@Autowired` 애노테이션을 포함하는 한 `ResourceLoader` 타입을 예상하는 필드, 생성자 인수 또는 메서드 매개변수로 autowired 됩니다.
+
+---
+
+## 2.6 Resources as Dependencies
 
 
 
