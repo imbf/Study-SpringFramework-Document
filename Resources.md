@@ -297,6 +297,66 @@ Spring은 다음의 `Resource` 구현을 포함합니다.
 
 `InputStreamResource`의 단일 사용에 의지하는(resort to) 것 없이 주어진 바이트 배열로부터의 content를 로딩하기 위해 유용하다.
 
+---
+
+## 2.4 The `ResourceLoader`
+
+**`ResourceLoader` 인터페이스는 `Resource` 인스턴스를 리턴(즉,로드)할 수 있는 객체에 의해 구현되어지는 인터페이스를 의미합니다.** 다음의 리스트는 `ResourceLoader` 인터페이스 정의를 보여줍니다.
+
+```java
+public interface ResourceLoader {
+	
+   Resource getResource(String location);	//Resource 인스턴스를 리턴해주는 getter 추상메소드.
+}
+```
+
+모든 Application Context는 `ResourceLoader` 인터페이스를 구현한다. 그러므로 **모든 Application Context는 `Resource` 인스턴스를 얻기위해 사용되어질 수 있습니다.**
+
+특정한 application context에서 `getResource()`를 호출하고 특정한 위치 경로에 특정한 접두사를 갖지 않는 경우, 특정한 Application Context에 적절한 `Resource` 타입을 얻을 것 입니다. 예로들어, 다음의 코드가 `ClassPathXmlApplicationContext` 인스턴스에 대해서 실행 되었다고 가정하면
+
+```java
+Resource template = ctx.getResource("some/resource/path/myTemplate.txt");
+```
+
+`ClassPathXmlApplicationContext`에 대하여, 해당 코드는 `ClassPathResource`를 리턴한다. 만약 같은 메소드가 `FileSystemXmlApplicationContext` 인스턴스에 대해서 실행되었다면, `FileSystemXmlApplicationContext`는 `FileSystemResource`를 리턴할것이다. `WebApplicationContext`에 대해서는, `ServletContextResource`를 리턴할것이다. 이러한 것들은 각 context마다 적절한 객체를 리턴하는 것과 비슷하다.
+
+**결과적으로, 개발자는 특정한 Application Context에 대한 적절한 방법으로 Resource를 로드할 수 있다.**
+
+반면에, 특별한 `classpath:` 접두사를 사용함으로써 Application Context 타입에 관계없이 `ClassPathResource`를 강제로사용되어지게 할 수 있다. 예제는 다음과 같다.
+
+```java
+Resource template = ctx.getResource("classpath:some/resource/path/myTemplath.txt")
+```
+
+이와 비슷하게 표준 `java.net.URL` 접두사들을 명시함으로써 `UrlResource`가 사용되어지게 할 수 있다. 다음의 2가지 예제는 `file`과 `http` 접두사를 사용한다.
+
+```java
+Resource template = ctx.getResource("file:///some/resource/path/myTemplate.txtx");
+```
+
+```java
+Resource template = ctx.getResource("https://myhost.com/resource/path/myTemplate.txt");
+```
+
+다음의 테이블은 `String` 객체를 `Resource` 객체로 바꾸기 위한 전략들을 요약한다.
+
+**Table 10. Resources strings**
+
+| Prefix     | Example                          | Explanation                          |
+| ---------- | -------------------------------- | ------------------------------------ |
+| classpath: | `classpath:com/myapp/config.xml` | classpath로부터 로드                 |
+| file:      | `file:///data/config.xml`        | 파일 시스템으로부터 URL로써 로드     |
+| http:      | `https://myserver/logo.png`      | URL로써 로드                         |
+| (none)     | `/data/config.xml`               | 기본적인 `ApplicationContext`에 의존 |
+
+
+
+
+
+
+
+
+
 
 
 
