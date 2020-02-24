@@ -86,7 +86,7 @@
 >
 >    - **limit** : <u>주어진 사이즈 이하의 크기를 갖는 새로운 스트림을 반환한다.</u> ex> 10,000이하인 메뉴 3개까지만 필요할 때
 >
->    ```
+>    ```java
 >    menus.stream()
 >    	   .filter(menu -> menu.getPrice() < 10000)
 >    	   .limit(3)
@@ -95,7 +95,7 @@
 >
 >    - **skip** : <u>처음 n개 요소를 제외한 스트림을 반환한다</u>(skip(n)). ex> 필터를 적용한 메뉴에서 앞의 3개는 제외하고자 할 때
 >
->    ```
+>    ```java
 >    menus.stream()
 >    	   .filter(menu -> menu.getPrice() < 10000)
 >    	   .skip(3)
