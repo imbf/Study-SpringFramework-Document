@@ -1,6 +1,6 @@
 # 2. Resources
 
-이번 챕터에서는 Spring이 어떻게 리소스를 다루는지 그리고 개발자는 Spring에서 리소스를 사용해서 어떻게 작업하는지에 대해서 다룰 것입니다. 이러한 것들은 다음과 같은 topic들을 포함합니다.
+이번 챕터에서는 Spring이 어떻게 리소스를 다루는지 그리고 개발자는 Spring에서 리소스를 사용해서 어떻게 작업하는지에 대해서 다룰 것입니다. 이러한 것들은 다음과 같은 topics을 포함합니다.
 
 - Introduction
 - The Resource Interface
